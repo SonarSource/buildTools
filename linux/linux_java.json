@@ -2,6 +2,7 @@
   "builders": [
     {
       "type": "googlecompute",
+      "account_file": "account.json",
       "source_image_family": "ubuntu-1804-lts",
       "project_id": "cix-94919",
       "image_name": "linux-java",
