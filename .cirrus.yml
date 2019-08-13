@@ -1,4 +1,4 @@
-gcp_credentials: ENCRYPTED[0d02da08c1136886934c63dfe6a3b40bb7fd3193aa4603a7b63efff78e49753018cc2592e5494266c574f6e706d4756d]
+gcp_credentials: ENCRYPTED[98a375ba1382f738a25e7164e2b4ccc01607e02ddcc4b45e0e0a0d33e26aed69691f745fb54d54ac4f3a65a0f9fe76c0]
 
 task:
   #only_if: false
