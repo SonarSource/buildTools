@@ -1,0 +1,97 @@
+gcp_credentials: ENCRYPTED[0d02da08c1136886934c63dfe6a3b40bb7fd3193aa4603a7b63efff78e49753018cc2592e5494266c574f6e706d4756d]
+
+task:
+  #only_if: false
+  auto_cancellation: false
+  gce_instance:
+    image_project: ubuntu-os-cloud
+    image_name: ubuntu-minimal-1804-bionic-v20190204b
+    zone: us-central1-a
+    preemptible: false
+    cpu: 6
+    memory: 30G
+    disk: 20
+
+  env:
+    ACCOUNT: ENCRYPTED[0d02da08c1136886934c63dfe6a3b40bb7fd3193aa4603a7b63efff78e49753018cc2592e5494266c574f6e706d4756d]
+  timeout_in: 60m
+  matrix:
+    - { env: { TEMPLATE_NAME: linux_java } }
+  name: ${TEMPLATE_NAME}
+  build_script:
+    - apt update && apt -y install curl unzip
+    - curl -LsS https://releases.hashicorp.com/packer/1.3.5/packer_1.3.5_linux_amd64.zip > packer.zip
+    - unzip packer.zip
+    - echo ${ACCOUNT} > account.json
+    - GOOGLE_APPLICATION_CREDENTIALS=account.json ./packer build -force linux/${TEMPLATE_NAME}.json
+
+dotnet_windows_build_task:
+  only_if: false
+  auto_cancellation: false
+  gce_instance:
+    image_project: ubuntu-os-cloud
+    image_name: ubuntu-minimal-1604-xenial-v20181203
+    zone: us-central1-a
+    preemptible: false
+    cpu: 6
+    memory: 15G
+    disk: 60
+  env:
+    ACCOUNT: ENCRYPTED[0d02da08c1136886934c63dfe6a3b40bb7fd3193aa4603a7b63efff78e49753018cc2592e5494266c574f6e706d4756d]
+  timeout_in: 180m
+  build_script:
+    - apt-get update && apt-get -y install curl unzip
+    - curl -LsS https://releases.hashicorp.com/packer/1.3.5/packer_1.3.5_linux_amd64.zip > packer.zip
+    - unzip packer.zip
+    - echo ${ACCOUNT} > account.json
+    - GOOGLE_APPLICATION_CREDENTIALS=account.json ./packer build -force windows/windows-dotnet.json
+
+test_windows_task:
+  only_if: false
+  # depends_on:
+    # - windows_build
+  gce_instance:
+    image_project: cix-94919
+    image_name: windows-dotnet
+    platform: windows
+    zone: us-central1-a
+    preemptible: true
+    cpu: 2
+    memory: 8G
+    disk: 100
+  git_script: git --version
+  #java_script: C:\jdk-10.0.2+13\bin\java -version
+  #scanner_script: set "JAVA_HOME=C:\jdk-10.0.2+13" && C:\sonar-scanner-3.2.0.1227\bin\sonar-scanner.bat --version
+  #python_script: C:\python\python.exe --version
+  node_script: node --version
+  npm_script: npm --version
+
+
+test_linux_java_task:
+  #only_if: false
+  auto_cancellation: false
+  depends_on:
+    - linux_java
+  gce_instance:
+    image_project: cix-94919
+    image_name: linux-java
+    zone: us-central1-a
+    preemptible: true
+    cpu: 1
+    memory: 1G
+    disk: 10
+  script:
+    - echo $SHELL
+    - git --version
+    - java -version
+    - ant -version
+    - mvn --version
+    - source /etc/profile
+    - java -version
+    - sdk list java
+    - sdk default java 11.0.2-open
+    - java -version
+    - ls /opt
+    - sonar-scanner --version
+    - filebeat version
+    - sudo grep -r 'APT::Periodic::Update-Package-Lists' /etc

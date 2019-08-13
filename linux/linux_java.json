@@ -1,0 +1,63 @@
+{
+  "builders": [
+    {
+      "type": "googlecompute",
+      "source_image_family": "ubuntu-1804-lts",
+      "project_id": "cix-94919",
+      "image_name": "linux-java",
+      "ssh_username": "cicd",
+      "ssh_pty": "true",
+      "zone": "us-central1-a",
+      "machine_type": "n1-standard-8",
+      "preemptible": "false",
+      "tags": ["packer"]
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "{{ template_dir }}/install_sdk.sh",
+      "destination": "/tmp/install_sdk.sh"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "echo start",
+        "sudo apt update -y -qq",
+        "echo install",
+        "sudo apt install -y -qq curl zip unzip git mercurial subversion",
+        "sudo apt install -y -qq openjdk-8-jdk",
+        "sudo apt install -y -qq ant maven",
+
+        "sudo -i bash /tmp/install_sdk.sh",
+        "sudo rm /tmp/install_sdk.sh",
+
+        "sudo apt install -y -qq build-essential autoconf python",
+
+        "wget -qO- https://deb.nodesource.com/setup_8.x | sudo -E bash -",
+        "sudo apt update -y -qq",
+        "sudo apt install -y -qq nodejs",
+
+        "curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.5.1-amd64.deb",
+        "sudo dpkg -i filebeat-6.5.1-amd64.deb",
+        "rm filebeat-6.5.1-amd64.deb",
+
+        "curl \"https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-3.0.3.778.zip\" -o /tmp/sonar-scanner.zip",
+        "sudo unzip -d /opt /tmp/sonar-scanner.zip",
+        "sudo bash -c 'printf \"export PATH=/opt/sonar-scanner-3.0.3.778/bin:${PATH}\" >> /etc/profile'",
+        "rm /tmp/sonar-scanner.zip",
+
+        "sudo systemctl stop apt-daily.timer",
+        "sudo systemctl stop apt-daily-upgrade.timer",
+        "sudo systemctl stop apt-daily-upgrade.service",
+        "sudo systemctl disable apt-daily.timer",
+        "sudo systemctl disable apt-daily-upgrade.timer",
+        "sudo systemctl disable apt-daily-upgrade.service",
+        "sudo systemctl daemon-reload",
+
+        "sudo sed -i 's/APT::Periodic::Update-Package-Lists \"1\";/APT::Periodic::Update-Package-Lists \"0\";/' /etc/apt/apt.conf.d/20auto-upgrades",
+        "sudo sed -i 's/APT::Periodic::Update-Package-Lists \"1\";/APT::Periodic::Update-Package-Lists \"0\";/' /etc/apt/apt.conf.d/10periodic"
+      ]
+    }
+  ]
+}
