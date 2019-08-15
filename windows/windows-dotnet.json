@@ -49,8 +49,7 @@
         "choco install nuget.commandline --version 4.8.1",
         "choco install sonarscanner-msbuild-net46 --version 4.5.0.1761",
         "choco install nodejs --version 10.13.0",
-        "choco install openjdk --version 11.0.1",
-        "choco install filebeat --version 6.6.0",
+        "choco install openjdk --version 12.0.2",
         "choco install python --version 3.7.2"
       ]
     },
