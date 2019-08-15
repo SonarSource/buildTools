@@ -24,9 +24,11 @@
       "type": "shell",
       "inline": [
         "echo start",
+        "sudo apt clean -y -qq",
         "sudo apt update -y -qq",
         "echo install",
-        "sudo apt install -y -qq curl zip unzip git mercurial subversion",
+        "sudo apt install -y -qq zip",
+        "sudo apt install -y -qq unzip git mercurial subversion curl",
         "sudo apt install -y -qq openjdk-8-jdk",
         "sudo apt install -y -qq ant maven",
 
