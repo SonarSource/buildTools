@@ -95,6 +95,7 @@ test_linux_java_task:
   filebeat_script: filebeat version
   script:
     - echo $SHELL    
+    - source /etc/profile
     - sdk list java
     - sdk default java 12.0.2-open
     - java -version
