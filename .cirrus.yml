@@ -87,7 +87,7 @@ test_linux_java_task:
   scanner_script: 
     - source /etc/profile
     - sonar-scanner --version
-  python_script: python.exe --version
+  python_script: python --version
   node_script: node --version
   npm_script: npm --version
   ant_script: ant -version
