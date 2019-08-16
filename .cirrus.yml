@@ -97,7 +97,7 @@ test_linux_java_task:
     - echo $SHELL    
     - source /etc/profile
     - sdk list java
-    - sdk default java 12.0.2-open
+    - sdk default java 12.0.2-zulu
     - java -version
     - ls /opt
     - sudo grep -r 'APT::Periodic::Update-Package-Lists' /etc
