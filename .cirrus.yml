@@ -6,7 +6,7 @@ task:
   gce_instance:
     image_project: ubuntu-os-cloud
     image_name: ubuntu-minimal-1804-bionic-v20190204b
-    zone: us-central1-a
+    zone: europe-west3-a
     preemptible: false
     cpu: 6
     memory: 30G
@@ -31,7 +31,7 @@ dotnet_windows_build_task:
   gce_instance:
     image_project: ubuntu-os-cloud
     image_name: ubuntu-minimal-1604-xenial-v20181203
-    zone: us-central1-a
+    zone: europe-west3-a
     preemptible: false
     cpu: 6
     memory: 15G
@@ -54,7 +54,7 @@ test_windows_task:
     image_project: cix-94919
     image_name: windows-dotnet
     platform: windows
-    zone: us-central1-a
+    zone: europe-west3-a
     preemptible: true
     cpu: 2
     memory: 8G
@@ -65,6 +65,8 @@ test_windows_task:
   python_script: python.exe --version
   node_script: node --version
   npm_script: npm --version
+  script: 
+    - dir c:\
 
 
 test_linux_java_task:
@@ -75,23 +77,25 @@ test_linux_java_task:
   gce_instance:
     image_project: cix-94919
     image_name: linux-java
-    zone: us-central1-a
+    zone: europe-west3-a
     preemptible: true
     cpu: 1
     memory: 1G
     disk: 10
+  git_script: git --version
+  java_script: java -version
+  scanner_script: sonar-scanner --version
+  python_script: python.exe --version
+  node_script: node --version
+  npm_script: npm --version
+  ant_script: ant -version
+  mvn_script: mvn --version  
+  filebeat_script: filebeat version
   script:
-    - echo $SHELL
-    - git --version
-    - java -version
-    - ant -version
-    - mvn --version
-    - source /etc/profile
-    - java -version
+    - echo $SHELL    
     - sdk list java
-    - sdk default java 11.0.2-open
+    - sdk default java 12.0.2-open
     - java -version
     - ls /opt
-    - sonar-scanner --version
-    - filebeat version
     - sudo grep -r 'APT::Periodic::Update-Package-Lists' /etc
+  
