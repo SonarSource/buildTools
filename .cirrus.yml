@@ -26,7 +26,7 @@ task:
     - GOOGLE_APPLICATION_CREDENTIALS=account.json ./packer build -force linux/${TEMPLATE_NAME}.json
 
 dotnet_windows_build_task:
-  #only_if: false
+  only_if: false
   auto_cancellation: false
   gce_instance:
     image_project: ubuntu-os-cloud
@@ -47,9 +47,9 @@ dotnet_windows_build_task:
     - GOOGLE_APPLICATION_CREDENTIALS=account.json ./packer build -force windows/windows-dotnet.json
 
 test_windows_task:
-  only_if: false
-  depends_on:
-   - dotnet_windows_build_task
+  #only_if: false
+  #depends_on:
+  # - dotnet_windows_build_task
   gce_instance:
     image_project: cix-94919
     image_name: windows-dotnet
@@ -70,8 +70,8 @@ test_windows_task:
 test_linux_java_task:
   #only_if: false
   auto_cancellation: false
-  depends_on:
-    - linux_java
+  #depends_on:
+  #  - linux_java
   gce_instance:
     image_project: cix-94919
     image_name: linux-java
