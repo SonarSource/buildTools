@@ -62,7 +62,7 @@ test_windows_task:
   git_script: git --version
   java_script: java -version
   scanner_script: C:\sonar-scanner-4.0.0.1744\bin\sonar-scanner.bat --version
-  python_script: C:\python\python.exe --version
+  python_script: python.exe --version
   node_script: node --version
   npm_script: npm --version
 
