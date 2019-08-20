@@ -21,6 +21,11 @@
       "destination": "/tmp/install_sdk.sh"
     },
     {
+      "type": "file",
+      "source": "{{ template_dir }}/settings.xml",
+      "destination": "/usr/share/maven/conf/settings.xml"
+    },
+    {
       "type": "shell",
       "inline": [
         "echo start",
