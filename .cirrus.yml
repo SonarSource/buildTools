@@ -48,7 +48,7 @@ dotnet_windows_build_task:
 
 test_windows_task:
   #only_if: false
-  #depends_on:
+  depends_on:
    - dotnet_windows_build
   gce_instance:
     image_project: cix-94919
