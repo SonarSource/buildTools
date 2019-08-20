@@ -23,7 +23,7 @@
     {
       "type": "file",
       "source": "{{ template_dir }}/settings.xml",
-      "destination": "/usr/share/maven/conf/settings.xml"
+      "destination": "/tmp/settings.xml"
     },
     {
       "type": "shell",
@@ -36,6 +36,7 @@
         "sudo apt install -y -qq unzip git mercurial subversion curl",
         "sudo apt install -y -qq openjdk-8-jdk",
         "sudo apt install -y -qq ant maven",
+        "sudo cp /tmp/settings.xml /etc/maven",
 
         "sudo -i bash /tmp/install_sdk.sh",
         "sudo rm /tmp/install_sdk.sh",
