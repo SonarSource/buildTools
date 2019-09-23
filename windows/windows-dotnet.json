@@ -3,7 +3,7 @@
     {
       "type": "googlecompute",
       "account_file": "account.json",
-      "project_id": "cix-94919",
+      "project_id": "language-team",
       "source_image_family": "windows-1803-core",
       "image_name": "windows-dotnet",
       "disk_size": "60",
