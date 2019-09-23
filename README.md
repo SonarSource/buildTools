@@ -8,7 +8,7 @@ By default traffic on `tcp:5986` is not allowed so we need to add a firewall rul
 
 ```bash
 gcloud compute firewall-rules create default-allow-winrm \
-    --project <Project ID> \
+    --project $PROJECT_ID \
     --allow tcp:5986 \
     --priority 65534 \
     --target-tags packer

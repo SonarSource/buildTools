@@ -1,4 +1,4 @@
-gcp_credentials: ENCRYPTED[b63a8352bf26ef383401a1d70a1a071e3a88b99a1f59e84d70e85bf13650fe7f8d8d1557bf55b133882b39c524a78640]
+gcp_credentials: ENCRYPTED[!17c59813193e86cc337bce848b358412b90f50bc5fe1b8b39d363cdf14a41ebe76cfba0482e7f81d076994b9f6dbfb4c!]
 
 task:
   #only_if: false
@@ -13,7 +13,7 @@ task:
     disk: 20
 
   env:
-    ACCOUNT: ENCRYPTED[3de0b3a8857adf30dbe0f304acb5154ab96eea5e10878852fb6f95b8175bc28c3b11f4fd8418d27cf77ce01a9e2c9b27]
+    ACCOUNT: ENCRYPTED[!0bacf9b92a239fe906a2e58e03b0376177b48c31a54b0d0c9488bdb00b318bbf6684c0a938f5f38ed2e0dd8499eaff88!]
   timeout_in: 60m
   matrix:
     - { env: { TEMPLATE_NAME: linux_java } }
@@ -37,7 +37,7 @@ dotnet_windows_build_task:
     memory: 15G
     disk: 60
   env:
-    ACCOUNT: ENCRYPTED[3de0b3a8857adf30dbe0f304acb5154ab96eea5e10878852fb6f95b8175bc28c3b11f4fd8418d27cf77ce01a9e2c9b27]
+    ACCOUNT: ENCRYPTED[!0bacf9b92a239fe906a2e58e03b0376177b48c31a54b0d0c9488bdb00b318bbf6684c0a938f5f38ed2e0dd8499eaff88!]
   timeout_in: 180m
   build_script:
     - apt-get update && apt-get -y install curl unzip
@@ -51,7 +51,7 @@ test_windows_task:
   depends_on:
    - dotnet_windows_build
   gce_instance:
-    image_project: cix-94919
+    image_project: language-team
     image_name: windows-dotnet
     platform: windows
     zone: europe-west3-a
@@ -75,7 +75,7 @@ test_linux_java_task:
   #depends_on:
   #  - linux_java
   gce_instance:
-    image_project: cix-94919
+    image_project: language-team
     image_name: linux-java
     zone: europe-west3-a
     preemptible: true
