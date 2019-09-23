@@ -13,7 +13,7 @@ task:
     disk: 20
 
   env:
-    ACCOUNT: ENCRYPTED[!0bacf9b92a239fe906a2e58e03b0376177b48c31a54b0d0c9488bdb00b318bbf6684c0a938f5f38ed2e0dd8499eaff88!]
+    ACCOUNT: ENCRYPTED[!e7ca0841e1d1242ca4f8a3a5937eb79d9217ad280700f50cc2f6f82f07ca1be9a471e24763ed81eed44a6096005cefcb!]
   timeout_in: 60m
   matrix:
     - { env: { TEMPLATE_NAME: linux_java } }
@@ -37,7 +37,7 @@ dotnet_windows_build_task:
     memory: 15G
     disk: 60
   env:
-    ACCOUNT: ENCRYPTED[!0bacf9b92a239fe906a2e58e03b0376177b48c31a54b0d0c9488bdb00b318bbf6684c0a938f5f38ed2e0dd8499eaff88!]
+    ACCOUNT: ENCRYPTED[!e7ca0841e1d1242ca4f8a3a5937eb79d9217ad280700f50cc2f6f82f07ca1be9a471e24763ed81eed44a6096005cefcb!]
   timeout_in: 180m
   build_script:
     - apt-get update && apt-get -y install curl unzip
