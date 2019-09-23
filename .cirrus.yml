@@ -26,7 +26,7 @@ task:
     - GOOGLE_APPLICATION_CREDENTIALS=account.json ./packer build -force linux/${TEMPLATE_NAME}.json
 
 dotnet_windows_build_task:
-  only_if: false
+  #only_if: false
   auto_cancellation: false
   gce_instance:
     image_project: ubuntu-os-cloud
