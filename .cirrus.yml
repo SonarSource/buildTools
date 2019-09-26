@@ -72,8 +72,8 @@ test_windows_task:
 test_linux_java_task:
   #only_if: false
   auto_cancellation: false
-  #depends_on:
-  #  - linux_java
+  depends_on:
+    - linux_java
   gce_instance:
     image_project: language-team
     image_name: linux-java
