@@ -35,19 +35,26 @@ def promote(request):
     The response text, or any set of values that can be turned into a
     Response object using `make_response`
     <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>.
+  Trigger:
+    {functionBaseUrl}/promote/GITHUB_ORG/GITHUB_PROJECT/GITHUB_BRANCH/BUILD_NUMBER/PULL_REQUEST_NUMBER
   """
   
+  auth = request.authorization
+  print("auth:"+str(auth))
 
-  pullRequest=getVar(request,'PULL_REQUEST')
-  githubBranch=getVar(request,'GITHUB_BRANCH')
-  buildNumber=getVar(request,'BUILD_NUMBER')
-  project=getVar(request,'PROJECT')
+  print("PATH:"+request.path)
+  paths=request.path.split("/")
+  org=paths[1]
+  project=paths[2]
+  githubBranch=paths[3]
+  buildNumber=paths[4]
+  pullRequest=paths[5]
   targetRepo=None
   status=None
   response=None
   doPromote = False
 
-  print("PULL_REQUEST: " + pullRequest)
+  print("PULL_REQUEST: " + str(pullRequest))
   print("GITHUB_BRANCH: " + githubBranch)
   print("BUILD_NUMBER: " + buildNumber)
   print("PROJECT: " + project)
@@ -66,7 +73,7 @@ def promote(request):
         status = 'it-passed'
         doPromote = True
 
-    if githubBranch.startsWith("dogfood-on-"):
+    if githubBranch.startswith("dogfood-on-"):
       targetRepo = "sonarsource-dogfood-builds"
       status = 'it-passed'
       doPromote = True
