@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the list of artifacts to display in BURGR
-ARTIFACTS=com.sonarsource.dummy:sonar-dummy-plugin:jar
+#ARTIFACTS should exist in env and is a list of downloadable artifacts 
 
 #PROJECT_VERSION should exist in env
 
@@ -56,7 +56,6 @@ cat > $BURGR_FILE <<EOF
   "buildNumber":"$BUILD_NUMBER"
 }
 EOF
-
 HTTP_CODE=$(curl -s -o /dev/null -w %{http_code} -X POST -d @$BURGR_FILE -H "Content-Type:application/json" -u"${BURGR_USERNAME}:${BURGR_PASSWORD}" "${BURGR_URL}/api/promote/${CIRRUS_REPO_OWNER}/${CIRRUS_REPO_NAME}/${CIRRUS_BUILD_ID}")
 if [ "$HTTP_CODE" != "200" ]; then
   echo "Cannot notify BURGR ($HTTP_CODE)"
