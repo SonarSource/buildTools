@@ -3,9 +3,7 @@
 # Set the list of artifacts to display in BURGR
 ARTIFACTS=com.sonarsource.dummy:sonar-dummy-plugin:jar
 
-# Compute the version of the project
-PROJECT_VERSION=$(cat ./version.txt)
-echo "Project version: $PROJECT_VERSION"
+#PROJECT_VERSION should exist in env
 
 # Create the URL of an artifact given a GAC (i.e. org.sonarsource.sonarqube:sonar-application:zip or com.sonarsource.sonarqube:sonarqube-enterprise:yguard:xml)
 function createArtifactURL() {
