@@ -1,15 +1,13 @@
 #------------------------------------------------------------------------------
-# All the tools required to build mysql-migrator, including execution
+# All the tools required to build java project, including execution
 # of integration tests.
 #
 # Build from the basedir:
-#   docker build -f docker/Dockerfile-build -t mysql-migrator-build docker
+#   docker build -f languageTeam.Dockerfile -t base .
 #
 # Verify the content of the image by running a shell session in it:
-#   docker run -it mysql-migrator-build bash
+#   docker run -it base bash
 #
-# CirrusCI builds the image when needed. No need to manually upload it
-# to Google Cloud Container Registry. See section "gke_container" of .cirrus.yml
 #------------------------------------------------------------------------------
 
 FROM maven:3.6-jdk-11
