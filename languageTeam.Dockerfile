@@ -23,3 +23,7 @@ COPY settings.xml /usr/share/maven/conf/settings.xml
 
 ENV MAVEN_CONFIG "/home/sonarsource/.m2"
 USER sonarsource
+COPY bin/burgr-notify-promotion.sh bin/cirrus-env.sh \
+  bin/maven_expression bin/regular_mvn_build_deploy_analyse bin/set_maven_build_version \
+  /home/sonarsource/bin/
+ENV PATH="/home/sonarsource/bin:${PATH}"
