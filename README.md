@@ -1,7 +1,7 @@
 # Standard Dockerfile 
 
 language team base image:
-docker build -t base .
+docker build -f languageTeam.Dockerfile -t base .
 docker tag base gcr.io/language-team/base:v0
 docker push gcr.io/language-team/base:v0
 
