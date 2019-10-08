@@ -17,9 +17,10 @@ USER root
 RUN apt-get update && apt-get -y install python3
 RUN groupadd -r sonarsource && useradd -r -m -g sonarsource sonarsource
 
-COPY settings.xml /usr/share/maven/conf/settings.xml
-
 ENV MAVEN_CONFIG "/home/sonarsource/.m2"
+COPY settings.xml ${MAVEN_CONFIG}/settings.xml
+RUN chown sonarsource:sonarsource ${MAVEN_CONFIG}
+
 USER sonarsource
 COPY bin/burgr-notify-promotion bin/cirrus-env \
   bin/maven_expression bin/regular_mvn_build_deploy_analyse bin/set_maven_build_version \
