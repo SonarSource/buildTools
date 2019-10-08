@@ -1,36 +1,17 @@
 gcp_credentials: ENCRYPTED[!17c59813193e86cc337bce848b358412b90f50bc5fe1b8b39d363cdf14a41ebe76cfba0482e7f81d076994b9f6dbfb4c!]
-
-#docker_builder:
-#  build_script: docker build --tag myrepo/foo:latest .
-#    - docker build -f languageTeam.Dockerfile -t base --tag gcr.io/language-team/base:v1 .
-
+                    
 docker_build_task:
-  gke_container: 
-    image: docker:latest # This image can be any custom image. The only hard requirement is that it needs to have `docker-cli` installed.
-    cluster_name: cirrus-ci-lt-cluster
-    zone: us-central1-a # zone of the cluster
-    namespace: default
+  gce_instance:
+    image_project: language-team
+    image_name: docker-builder-lt-v1
+    zone: us-central1-a
+    disk: 10
     cpu: 1
-    memory: 1500Mb
-    additional_containers:
-      - name: dockerdaemon
-        privileged: true # docker-in-docker needs to run in privileged mode
-        cpu: 4
-        memory: 3500Mb
-        image: docker:dind
-        port: 2375
-        env:
-          DOCKER_DRIVER: overlay2 # this speeds up the build
-  env:
-    DOCKER_HOST: tcp://localhost:2375 # this is required so that docker cli commands connect to the "additional container" instead of `docker.sock`.
-    GOOGLE_CREDENTIALS: ENCRYPTED[!17c59813193e86cc337bce848b358412b90f50bc5fe1b8b39d363cdf14a41ebe76cfba0482e7f81d076994b9f6dbfb4c!] # this should contain the json key for a gcp service account with the `roles/storage.admin` role on the `artifacts.<your_gcp_project>.appspot.com` bucket as described here https://cloud.google.com/container-registry/docs/access-control. This is only required if you want to pull / push to gcr. If we use dockerhub you need to use different credentials.
-  login_script:
-    echo $GOOGLE_CREDENTIALS | docker login -u _json_key --password-stdin https://gcr.io
+    memory: 1G
+    preemptible: false
+  
   build_script:
-    - docker pull gcr.io/language-team/base:v1 || true
-    - docker build
-      --cache-from=gcr.io/language-team/base:v1
-      -t gcr.io/language-team/base:v1 
-      .   
-  push_script:
-    - docker push gcr.io/language-team/base:v1     
+    - docker pull gcr.io/language-team/base:v1 
+    - docker build -f languageTeam.Dockerfile -t base .
+    - docker tag base "gcr.io/language-team/base:v1"
+    - docker push "gcr.io/language-team/base:v1"
