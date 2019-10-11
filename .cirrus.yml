@@ -40,6 +40,7 @@ test_windows_task:
   python_script: python.exe --version
   node_script: node --version
   npm_script: npm --version
+  mvn_script: mvn --version
   script: 
     - dir c:\
   
