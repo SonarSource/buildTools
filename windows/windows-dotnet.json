@@ -45,6 +45,7 @@
     {
       "type": "powershell",
       "inline": [        
+        "choco install 7zip --version 19.0",
         "choco install nuget.commandline --version 4.8.1",
         "choco install sonarscanner-msbuild-net46 --version 4.5.0.1761",
         "choco install nodejs --version 10.16.3",
