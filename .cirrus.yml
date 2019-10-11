@@ -10,7 +10,7 @@ dotnet_windows_build_task:
     preemptible: false
     cpu: 6
     memory: 15G
-    disk: 60
+    disk: 128
     use_ssd: true
   env:
     ACCOUNT: ENCRYPTED[!e7ca0841e1d1242ca4f8a3a5937eb79d9217ad280700f50cc2f6f82f07ca1be9a471e24763ed81eed44a6096005cefcb!]
@@ -44,4 +44,5 @@ test_windows_task:
   mvn_script: mvn --version
   script: 
     - dir c:\
+    - echo %PATH:;=&echo.%
   

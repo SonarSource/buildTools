@@ -44,14 +44,14 @@
     },
     {
       "type": "powershell",
-      "inline": [
-        "choco install git --version 2.23.0 --package-parameters \"/GitAndUnixToolsOnPath /NoShellIntegration\"",
+      "inline": [        
         "choco install nuget.commandline --version 4.8.1",
         "choco install sonarscanner-msbuild-net46 --version 4.5.0.1761",
         "choco install nodejs --version 10.16.3",
         "choco install openjdk11 --version 11.0.4.11",
         "choco install python --version 3.7.2",
-        "choco install maven --version 3.6.2"
+        "choco install maven --version 3.6.2",
+        "choco install git --version 2.23.0 --package-parameters \"/GitAndUnixToolsOnPath /NoShellIntegration\""
       ]
     },
     {
