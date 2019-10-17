@@ -1,6 +1,7 @@
 gcp_credentials: ENCRYPTED[!17c59813193e86cc337bce848b358412b90f50bc5fe1b8b39d363cdf14a41ebe76cfba0482e7f81d076994b9f6dbfb4c!]
                     
 docker_build_task:
+  only_if: $CIRRUS_PR == ""
   gce_instance:
     image_project: language-team
     image_name: docker-builder-lt-v1
