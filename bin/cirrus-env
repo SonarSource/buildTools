@@ -25,4 +25,9 @@ else
   export BUILD_NUMBER=$(cirrusBuildNumber)
 fi
 export BUILD_ID=${BUILD_NUMBER}
+
+case $BUILD_ID in
+    ''|*[!0-9]*) echo "$BUILD_ID is not a number" && exit 1 ;;    
+esac
+
 printenv | grep -v -e USERNAME -e PASSWORD -e KEY -e TOKEN | sort
