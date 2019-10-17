@@ -21,6 +21,8 @@ git fetch --unshallow || true
 if [ "${GITHUB_BRANCH}" == "master" ] && [ "$PULL_REQUEST" == "false" ]; then
   echo '======= Build, deploy and analyze master'
 
+  git fetch origin ${GITHUB_BRANCH}
+
   # Analyze with SNAPSHOT version as long as SQ does not correctly handle
   # purge of release data
   CURRENT_VERSION=`maven_expression "project.version"`
@@ -50,6 +52,8 @@ elif [[ "${GITHUB_BRANCH}" == "branch-"* ]] && [ "$PULL_REQUEST" == "false" ]; t
   # For this reason errors are ignored with "|| true"
   git fetch --unshallow || true
 
+  git fetch origin ${GITHUB_BRANCH}
+  
   export MAVEN_OPTS="-Xmx1536m -Xms128m"
 
   # get current version from pom
