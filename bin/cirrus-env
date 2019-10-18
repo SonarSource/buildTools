@@ -10,6 +10,8 @@ export GITHUB_REPO=${CIRRUS_REPO_FULL_NAME}
 export PROJECT=${CIRRUS_REPO_NAME}
 export PULL_REQUEST=${CIRRUS_PR:-false}
 export PULL_REQUEST_SHA=${CIRRUS_BASE_SHA:-}
+# used by burgr to identify stages of the pipeline
+export PIPELINE_ID=${CIRRUS_BUILD_ID}
 
 export LANG=C.UTF-8
 

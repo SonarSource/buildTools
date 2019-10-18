@@ -18,6 +18,11 @@ set -euo pipefail
 # For this reason errors are ignored with "|| true"
 git fetch --unshallow || true
 
+# PIPELINE_ID is used by burgr to identify stages of the pipeline
+if [ -z "$PIPELINE_ID" ]; then
+  $PIPELINE_ID=$BUILD_NUMBER
+fi
+
 if [ "${GITHUB_BRANCH}" == "master" ] && [ "$PULL_REQUEST" == "false" ]; then
   echo '======= Build, deploy and analyze master'
 
@@ -37,7 +42,7 @@ if [ "${GITHUB_BRANCH}" == "master" ] && [ "$PULL_REQUEST" == "false" ]; then
       -Dsonar.login=$SONAR_TOKEN \
       -Dsonar.projectVersion=$CURRENT_VERSION \
       -Dsonar.analysis.buildNumber=$BUILD_NUMBER \
-      -Dsonar.analysis.pipeline=$BUILD_NUMBER \
+      -Dsonar.analysis.pipeline=$PIPELINE_ID \
       -Dsonar.analysis.sha1=$GIT_SHA1  \
       -Dsonar.analysis.repository=$GITHUB_REPO \
       -B -e -V $*
@@ -78,7 +83,7 @@ elif [[ "${GITHUB_BRANCH}" == "branch-"* ]] && [ "$PULL_REQUEST" == "false" ]; t
       -Dsonar.login=$SONAR_TOKEN \
       -Dsonar.branch.name=$GITHUB_BRANCH \
       -Dsonar.analysis.buildNumber=$BUILD_NUMBER \
-      -Dsonar.analysis.pipeline=$BUILD_NUMBER \
+      -Dsonar.analysis.pipeline=$PIPELINE_ID \
       -Dsonar.analysis.sha1=$GIT_SHA1  \
       -Dsonar.analysis.repository=$GITHUB_REPO
 
@@ -101,7 +106,7 @@ elif [ "$PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
       -Dsonar.host.url=$SONAR_HOST_URL \
       -Dsonar.login=$SONAR_TOKEN \
       -Dsonar.analysis.buildNumber=$BUILD_NUMBER \
-      -Dsonar.analysis.pipeline=$BUILD_NUMBER \
+      -Dsonar.analysis.pipeline=$PIPELINE_ID \
       -Dsonar.analysis.sha1=$GIT_SHA1  \
       -Dsonar.analysis.repository=$GITHUB_REPO \
       -Dsonar.analysis.prNumber=$PULL_REQUEST \
@@ -119,7 +124,7 @@ elif [ "$PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
       -Dsonar.host.url=$SONAR_HOST_URL \
       -Dsonar.login=$SONAR_TOKEN \
       -Dsonar.analysis.buildNumber=$BUILD_NUMBER \
-      -Dsonar.analysis.pipeline=$BUILD_NUMBER \
+      -Dsonar.analysis.pipeline=$PIPELINE_ID \
       -Dsonar.analysis.sha1=$PULL_REQUEST_SHA  \
       -Dsonar.analysis.repository=$GITHUB_REPO \
       -Dsonar.analysis.prNumber=$PULL_REQUEST \
@@ -153,7 +158,7 @@ elif [[ "$GITHUB_BRANCH" == "feature/long/"* ]] && [ "$PULL_REQUEST" == "false" 
     -Dsonar.login=$SONAR_TOKEN \
     -Dsonar.branch.name=$GITHUB_BRANCH \
     -Dsonar.analysis.buildNumber=$PULL_REQUEST \
-    -Dsonar.analysis.pipeline=$BUILD_NUMBER \
+    -Dsonar.analysis.pipeline=$PIPELINE_ID \
     -Dsonar.analysis.sha1=$GIT_SHA1  \
     -Dsonar.analysis.repository=$GITHUB_REPO \
     -B -e -V $*    
