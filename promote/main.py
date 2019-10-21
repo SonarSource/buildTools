@@ -71,16 +71,21 @@ def promote(request):
       return make_response(str(e),400)
 
     if pullRequest:
-      targetRepo = repo.replace('qa', 'dev')
-      #only for multipromote purpose
-      targetRepo2 = "sonarsource-public-dev"
+      if request.args.get('multi') == "true":
+        targetRepo = "sonarsource-private-dev"
+        targetRepo2 = "sonarsource-public-dev"
+      else:
+        targetRepo = repo.replace('qa', 'dev')
       status = 'it-passed-pr'
       doPromote = True
     else:
       if githubBranch == "master" or githubBranch.startswith("branch-"):
+        if request.args.get('multi') == "true":
+          targetRepo = "sonarsource-private-builds"
+        else:
           targetRepo = repo.replace('qa', 'builds')
-          status = 'it-passed'
-          doPromote = True
+        status = 'it-passed'
+        doPromote = True
 
       if githubBranch.startswith("dogfood-on-"):
         targetRepo = "sonarsource-dogfood-builds"
@@ -100,11 +105,12 @@ def promote(request):
 
       if request.args.get('multi') == "true":
         url = f"{artifactoryUrl}/api/plugins/execute/multiRepoPromote?params=buildName={project};buildNumber={buildNumber};src1=sonarsource-private-qa;target1={targetRepo};src2=sonarsource-public-qa;target2={targetRepo2};status={status}"
+        headers = {'X-JFrog-Art-Api': artifactoryApiKey}
+        r = requests.get(url, headers=headers)
       else:
         url = f"{artifactoryUrl}/api/build/promote/{project}/{buildNumber}"
-        
-      headers = {'content-type': 'application/json', 'X-JFrog-Art-Api': artifactoryApiKey}
-      r = requests.post(url, data=json.dumps(json_payload), headers=headers)
+        headers = {'content-type': 'application/json', 'X-JFrog-Art-Api': artifactoryApiKey}
+        r = requests.post(url, data=json.dumps(json_payload), headers=headers)      
       if r.status_code == 200:      
         return make_response(f"status:{status}",200)
       else:
