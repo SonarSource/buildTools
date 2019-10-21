@@ -68,4 +68,4 @@ cat > $BURGR_FILE <<EOF
   "buildNumber":"$BUILD_NUMBER"
 }
 EOF
-HTTP_CODE=$(curl -s -o /dev/null --fail -X POST -d @$BURGR_FILE -H "Content-Type:application/json" -u"${BURGR_USERNAME}:${BURGR_PASSWORD}" "${BURGR_URL}/api/promote/${CIRRUS_REPO_OWNER}/${CIRRUS_REPO_NAME}/${CIRRUS_BUILD_ID}")
+HTTP_CODE=$(curl -sfSL -X POST -d @$BURGR_FILE -H "Content-Type:application/json" -u"${BURGR_USERNAME}:${BURGR_PASSWORD}" "${BURGR_URL}/api/promote/${CIRRUS_REPO_OWNER}/${CIRRUS_REPO_NAME}/${CIRRUS_BUILD_ID}")
