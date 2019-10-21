@@ -60,7 +60,8 @@
       "type": "powershell",
       "scripts": [
         "{{template_dir}}/scripts/Install-VS2017.ps1",
-        "{{template_dir}}/scripts/install_sonar_scanner.ps1"
+        "{{template_dir}}/scripts/install_sonar_scanner.ps1",
+        "{{template_dir}}/scripts/install_buildTools.ps1"
       ]
     },
     {
