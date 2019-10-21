@@ -3,7 +3,19 @@
 # Set the list of artifacts to display in BURGR
 #ARTIFACTS should exist in env and is a list of downloadable artifacts 
 
-#PROJECT_VERSION should exist in env
+#PROJECT_VERSION should exist in env set by set_maven_build_version in maven project calculated below for gradle projects
+if test -f gradle.properties; then  
+  PROJECT_VERSION=$(cat gradle.properties | sed -ne 's/^version=//p')
+  if [[ "${PROJECT_VERSION}" == *"-SNAPSHOT" ]]; then
+    PROJECT_VERSION=${PROJECT_VERSION%-SNAPSHOT}
+    DIGITS=(${PROJECT_VERSION//./ })
+    if [[ ${#DIGITS[@]} = 2 ]]; then
+      PROJECT_VERSION=$PROJECT_VERSION.0
+    fi
+    PROJECT_VERSION=$PROJECT_VERSION.$BUILD_NUMBER
+  fi
+  export PROJECT_VERSION
+fi
 
 # Create the URL of an artifact given a GAC (i.e. org.sonarsource.sonarqube:sonar-application:zip or com.sonarsource.sonarqube:sonarqube-enterprise:yguard:xml)
 function createArtifactURL() {
