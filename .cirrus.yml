@@ -42,7 +42,9 @@ test_windows_task:
   node_script: node --version
   npm_script: npm --version
   mvn_script: mvn --version
+  buildTools_script: bash -c c:\buildTools-docker\bin\cirrus-env
   script: 
     - dir c:\
-    - echo %PATH:;=&echo.%
+    - dir c:\buildTools-docker\bin
+    - echo %PATH%
   
