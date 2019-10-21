@@ -23,6 +23,7 @@ RUN chown sonarsource:sonarsource ${MAVEN_CONFIG}
 USER sonarsource
 
 COPY bin/burgr-notify-promotion bin/cirrus-env bin/regular_gradle_build_deploy_analyze \
+  bin/init_git_submodules \
   bin/maven_expression bin/regular_mvn_build_deploy_analyse bin/set_maven_build_version \
   /home/sonarsource/bin/
 ENV PATH="/home/sonarsource/bin:${PATH}"
