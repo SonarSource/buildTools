@@ -49,11 +49,12 @@ def promote(request):
   if validateAutorizationHeader(request) == AUTHENTICATED:  
     print("PATH:"+request.path)
     paths=request.path.split("/")
+    size = len(paths) 
     #org=paths[1]
     project=paths[2]
     githubBranch=paths[3]
-    buildNumber=paths[4]
-    pullRequest=paths[5]
+    buildNumber=paths[size-2]
+    pullRequest=paths[size-1]
     targetRepo=None
     targetRepo2="sonarsource-public-builds"
     status=None
