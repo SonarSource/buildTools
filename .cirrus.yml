@@ -11,7 +11,9 @@ docker_build_task:
     preemptible: false
   
   build_script:
-    - docker pull gcr.io/language-team/base:v1 
+    - docker pull gcr.io/language-team/base:v1
     - docker build -f languageTeam.Dockerfile -t base .
-    - docker tag base "gcr.io/language-team/base:v1"
-    - docker push "gcr.io/language-team/base:v1"
+    - docker tag base "gcr.io/language-team/base:v2"
+    - docker tag base "gcr.io/language-team/base:latest"
+    - docker push "gcr.io/language-team/base:v2"
+    - docker push "gcr.io/language-team/base:latest"

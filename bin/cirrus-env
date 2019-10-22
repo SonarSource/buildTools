@@ -25,8 +25,18 @@ if [ "$TASK_TYPE" == "BUILD" ]; then
   export BUILD_NUMBER=$(cirrusBuildNumber -X POST)
 else
   export BUILD_NUMBER=$(cirrusBuildNumber)
+  export SONARSOURCE_QA=true
 fi
 export BUILD_ID=${BUILD_NUMBER}
+
+if [[ "${GITHUB_TOKEN:-}" == "ENCRYPTED"* ]]; then
+  echo "Unsetting GITHUB_TOKEN"
+  unset GITHUB_TOKEN
+fi
+
+if [[ "$TASK_TYPE" == *"-PRIVATE" || "$TASK_TYPE" == "QA"* ]]; then
+  cp ~/.m2/settings-private.xml ~/.m2/settings.xml
+fi
 
 case $BUILD_ID in
     ''|*[!0-9]*) echo "$BUILD_ID is not a number" && exit 1 ;;    

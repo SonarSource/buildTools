@@ -17,13 +17,14 @@ USER root
 RUN groupadd -r sonarsource && useradd -r -m -g sonarsource sonarsource
 
 ENV MAVEN_CONFIG "/home/sonarsource/.m2"
-COPY settings.xml ${MAVEN_CONFIG}/settings.xml
-RUN chown sonarsource:sonarsource ${MAVEN_CONFIG}
+COPY settings-public.xml ${MAVEN_CONFIG}/settings.xml
+COPY settings-private.xml ${MAVEN_CONFIG}/settings-private.xml
+RUN chown -R sonarsource:sonarsource ${MAVEN_CONFIG}
 
 USER sonarsource
 
 COPY bin/burgr-notify-promotion bin/cirrus-env bin/regular_gradle_build_deploy_analyze \
   bin/init_git_submodules \
-  bin/maven_expression bin/regular_mvn_build_deploy_analyse bin/set_maven_build_version \
+  bin/maven_expression bin/regular_mvn_build_deploy_analyze bin/set_maven_build_version \
   /home/sonarsource/bin/
 ENV PATH="/home/sonarsource/bin:${PATH}"

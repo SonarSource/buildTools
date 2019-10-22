@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Set the list of artifacts to display in BURGR
 #ARTIFACTS should exist in env and is a list of downloadable artifacts 
 
@@ -16,6 +18,10 @@ if test -f gradle.properties; then
   fi
   export PROJECT_VERSION
   echo $PROJECT_VERSION
+fi
+if [ -z "${PROJECT_VERSION:-}" ]; then
+  echo "Expecting PROJECT_VERSION, in case of maven do not forget source set_maven_build_version \$BUILD_NUMBER"
+  exit 1
 fi
 
 # Create the URL of an artifact given a GAC (i.e. org.sonarsource.sonarqube:sonar-application:zip or com.sonarsource.sonarqube:sonarqube-enterprise:yguard:xml)

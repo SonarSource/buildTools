@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 #allow init of submodule by using github token instead of ssh key
 
 GIT_SUB_MODULE=$1
