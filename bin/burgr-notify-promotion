@@ -15,6 +15,7 @@ if test -f gradle.properties; then
     PROJECT_VERSION=$PROJECT_VERSION.$BUILD_NUMBER
   fi
   export PROJECT_VERSION
+  echo $PROJECT_VERSION
 fi
 
 # Create the URL of an artifact given a GAC (i.e. org.sonarsource.sonarqube:sonar-application:zip or com.sonarsource.sonarqube:sonarqube-enterprise:yguard:xml)
@@ -68,4 +69,5 @@ cat > $BURGR_FILE <<EOF
   "buildNumber":"$BUILD_NUMBER"
 }
 EOF
-HTTP_CODE=$(curl -sfSL -X POST -d @$BURGR_FILE -H "Content-Type:application/json" -u"${BURGR_USERNAME}:${BURGR_PASSWORD}" "${BURGR_URL}/api/promote/${CIRRUS_REPO_OWNER}/${CIRRUS_REPO_NAME}/${CIRRUS_BUILD_ID}")
+echo "url ${BURGR_URL}/api/promote/${CIRRUS_REPO_OWNER}/${CIRRUS_REPO_NAME}/${CIRRUS_BUILD_ID}"
+curl -sfSL -X POST -d @$BURGR_FILE -H "Content-Type:application/json" -u"${BURGR_USERNAME}:${BURGR_PASSWORD}" "${BURGR_URL}/api/promote/${CIRRUS_REPO_OWNER}/${CIRRUS_REPO_NAME}/${CIRRUS_BUILD_ID}"
