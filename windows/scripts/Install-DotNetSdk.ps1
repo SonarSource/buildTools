@@ -7,3 +7,4 @@ choco install dotnetcore-sdk --version 2.1.302
 choco install dotnetcore-sdk --version 2.1.403
 choco install dotnetcore-sdk --version 2.1.500
 choco install dotnetcore-sdk --version 2.2.0
+choco install dotnetcore-sdk --version 3.0.100

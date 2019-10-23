@@ -42,6 +42,9 @@ test_windows_task:
   node_script: node --version
   npm_script: npm --version
   mvn_script: mvn --version
+  msbuild_script: MSBuild.exe -version
+  dotnet_script: dotnet --version
+  s4msb_script: SonarScanner.MSBuild.exe /?
   buildTools_script: bash -c "cat /c/buildTools-docker/bin/cirrus-env"
   script: 
     - dir c:\
