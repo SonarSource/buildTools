@@ -17,7 +17,7 @@ USER root
 RUN groupadd -r sonarsource && useradd -r -m -g sonarsource sonarsource
 
 ENV MAVEN_CONFIG "/home/sonarsource/.m2"
-COPY settings-public.xml ${MAVEN_CONFIG}/settings.xml
+COPY settings-public.xml ${MAVEN_CONFIG}/settings-public.xml
 COPY settings-private.xml ${MAVEN_CONFIG}/settings-private.xml
 RUN chown -R sonarsource:sonarsource ${MAVEN_CONFIG}
 

@@ -34,8 +34,16 @@ if [[ "${GITHUB_TOKEN:-}" == "ENCRYPTED"* ]]; then
   unset GITHUB_TOKEN
 fi
 
+M2_SOURCE=~/.m2
+if [ -f "/c/buildTools-docker/settings-public.xml" ]; then
+  # /c/buildTools-docker is populated during Windows image creation
+  M2_SOURCE=/c/buildTools-docker
+fi
+
 if [[ "$TASK_TYPE" == *"-PRIVATE" || "$TASK_TYPE" == "QA"* ]]; then
-  cp ~/.m2/settings-private.xml ~/.m2/settings.xml
+  cp ${M2_SOURCE}/settings-private.xml ~/.m2/settings.xml
+else
+  cp ${M2_SOURCE}/settings-public.xml ~/.m2/settings.xml
 fi
 
 case $BUILD_ID in
