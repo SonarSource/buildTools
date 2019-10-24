@@ -1,0 +1,61 @@
+{
+  "variables": {
+    "image_name": "{{env `IMAGE_NAME`}}",
+    "image_family": "{{env `IMAGE_FAMILY`}}"
+  },
+  "builders": [
+    {
+      "type": "googlecompute",
+      "account_file": "account.json",
+      "project_id": "language-team",
+      "source_image_family": "windows-1803-core",
+      "image_name": "{{user `image_name`}}",
+      "image_family": "{{user `image_family`}}",
+      "disk_size": "60",
+      "disk_type": "pd-ssd",
+      "machine_type": "n1-standard-8",
+      "communicator": "winrm",
+      "winrm_username": "cicd",
+      "winrm_insecure": true,
+      "winrm_use_ssl": true,
+      "metadata": {
+        "windows-startup-script-cmd": "winrm quickconfig -quiet & net user /add cicd & net localgroup administrators cicd /add & winrm set winrm/config/service/auth @{Basic=\"true\"}"
+      },
+      "zone": "europe-west1-b",
+      "state_timeout": "20m",
+      "tags": ["packer"]
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "powershell",
+      "scripts": [
+        "{{template_dir}}/scripts/Initialize-VM.ps1"
+      ]
+    },
+    {
+      "type": "powershell",
+      "inline": [        
+        "choco install 7zip --version 19.0",
+        "choco install nodejs --version 10.16.3",
+        "choco install yarn --version 1.19.1",
+        "choco install openjdk11 --version 11.0.4.11",
+        "choco install python --version 3.7.2",
+        "choco install maven --version 3.6.2",
+        "choco install git --version 2.23.0 --package-parameters \"/GitAndUnixToolsOnPath /NoShellIntegration\""
+      ]
+    },
+    {
+      "type": "powershell",
+      "scripts": [
+        "{{template_dir}}/scripts/install_buildTools.ps1"
+      ]
+    },
+    {
+      "type": "powershell",
+      "scripts": [
+        "{{template_dir}}/scripts/Finalize-VM.ps1"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+gcp_credentials: ENCRYPTED[!17c59813193e86cc337bce848b358412b90f50bc5fe1b8b39d363cdf14a41ebe76cfba0482e7f81d076994b9f6dbfb4c!]
+
+image_build_task:
+  #only_if: false
+  auto_cancellation: false
+  gce_instance:
+    image_project: ubuntu-os-cloud
+    image_name: ubuntu-minimal-1804-bionic-v20191024
+    zone: europe-west3-a
+    preemptible: false
+    cpu: 6
+    memory: 15G
+    disk: 128
+    use_ssd: true
+  env:
+    ACCOUNT: ENCRYPTED[!e7ca0841e1d1242ca4f8a3a5937eb79d9217ad280700f50cc2f6f82f07ca1be9a471e24763ed81eed44a6096005cefcb!]
+  timeout_in: 180m
+  build_script: bash build-packer-image.sh
+
+test_windows_task:
+  #only_if: false
+  depends_on:
+   - image_build
+  gce_instance:
+    image_project: language-team
+    # TODO test correct image
+    image_name: lt-base-windows
+    platform: windows
+    zone: europe-west3-a
+    preemptible: true
+    cpu: 2
+    memory: 8G
+    disk: 60
+  git_script: git --version
+  java_script: java -version
+  python_script: python.exe --version
+  node_script: node --version
+  npm_script: npm --version
+  mvn_script: mvn --version
+  buildTools_script: bash -c "cat /c/buildTools-docker/bin/cirrus-env"
+  script:
+    - dir c:\
+    - dir c:\buildTools-docker\bin
+    - echo %PATH%
