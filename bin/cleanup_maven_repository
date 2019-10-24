@@ -1,0 +1,4 @@
+#!/bin/bash
+#cleanup maven repository before caching it
+rm -rf "$HOME/.m2/repository/org/sonarsource/"
+find ~/.m2 -name resolver-status.properties -delete
