@@ -1,13 +1,14 @@
 #!/bin/bash
 
-export TAG=v2
+set -euo pipefail
 
-docker pull gcr.io/language-team/base:$TAG
+TAG=v2
+
+docker pull gcr.io/language-team/base:$TAG || true
 docker build -f languageTeam.Dockerfile -t base .
 
 if [ $CIRRUS_PR != "" ]; then
-  export TAG=$CIRRUS_PR
-  export LATEST=true
+  TAG=$CIRRUS_PR
   docker tag base "gcr.io/language-team/base:PR_$TAG"
   docker push "gcr.io/language-team/base:PR_$TAG"
 elif [ $CIRRUS_BRANCH == "docker" ]; then
@@ -18,6 +19,3 @@ elif [ $CIRRUS_BRANCH == "docker" ]; then
 else
   echo "Not building image for feature branch"
 fi
-
-
-

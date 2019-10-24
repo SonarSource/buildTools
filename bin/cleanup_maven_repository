@@ -1,6 +1,8 @@
 #!/bin/bash
-#cleanup maven repository before caching it
+
+set -euo pipefail
+
+# cleanup maven repository before caching it
 rm -rf "$CIRRUS_WORKING_DIR/.m2/repository/org/sonarsource/"
 rm -rf "$CIRRUS_WORKING_DIR/.m2/repository/com/sonarsource/"
 /usr/bin/find "$CIRRUS_WORKING_DIR/.m2" -name resolver-status.properties -delete
-

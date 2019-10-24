@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -euo pipefail
+
 # use maven to set PROJECT_VERSION in the environment, call the promote cloud function and notify burgr
 
 source cirrus-env PROMOTE
