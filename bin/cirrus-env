@@ -41,7 +41,7 @@ if [ -f "/c/buildTools-docker/settings-public.xml" ]; then
 fi
 
 [ ! -d ~/.m2 ] && mkdir ~/.m2
-if [[ "$TASK_TYPE" == *"-PRIVATE" || "$TASK_TYPE" == "QA"* ]]; then
+if [[ "$TASK_TYPE" == *"-PRIVATE" || "$TASK_TYPE" == "QA"* || "$TASK_TYPE" == "PROMOTE"* ]]; then
   cp ${M2_SOURCE}/settings-private.xml ~/.m2/settings.xml
 else
   cp ${M2_SOURCE}/settings-public.xml ~/.m2/settings.xml
