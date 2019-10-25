@@ -21,7 +21,7 @@ cirrusBuildNumber() {
 }
 
 TASK_TYPE=$1
-if [ "$TASK_TYPE" == "BUILD" ]; then
+if [[ "$TASK_TYPE" == "BUILD"* ]]; then
   export BUILD_NUMBER=$(cirrusBuildNumber -X POST)
 else
   export BUILD_NUMBER=$(cirrusBuildNumber)
