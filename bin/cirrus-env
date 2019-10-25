@@ -17,7 +17,7 @@ export LANG=C.UTF-8
 
 FUNCTION_URL=https://us-central1-ci-cd-215716.cloudfunctions.net
 cirrusBuildNumber() {
-  curl -s --retry 5 --retry-max-time 60 -H "Authorization: Bearer ABCDE" "${FUNCTION_URL}/cirrusBuildNumber/$CIRRUS_REPO_FULL_NAME/$CIRRUS_BUILD_ID" "$@"
+  curl --retry 5 --retry-max-time 60 -sfSL -H "Content-Length: 0" -H "Authorization: Bearer ABCDE" "${FUNCTION_URL}/cirrusBuildNumber/$CIRRUS_REPO_FULL_NAME/$CIRRUS_BUILD_ID" "$@"
 }
 
 TASK_TYPE=$1
