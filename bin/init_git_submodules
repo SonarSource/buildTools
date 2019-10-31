@@ -6,4 +6,4 @@ set -euo pipefail
 
 GIT_SUB_MODULE=$1
 sed -i "s|git@github.com:SonarSource/|https://${GITHUB_TOKEN}@github.com/SonarSource/|g" .gitmodules
-git submodule update --init "${GIT_SUB_MODULE}"
+git submodule update --init "${GIT_SUB_MODULE}" --depth 1
