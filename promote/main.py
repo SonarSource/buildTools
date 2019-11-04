@@ -71,7 +71,7 @@ def promote(request):
     except Exception as e:
       return make_response(str(e),400)
 
-    if pullRequest:
+    if pullRequest != "false":
       if request.args.get('multi') == "true":
         targetRepo = "sonarsource-private-dev"
         targetRepo2 = "sonarsource-public-dev"
