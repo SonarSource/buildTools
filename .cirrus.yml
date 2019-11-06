@@ -1,6 +1,6 @@
 gcp_credentials: ENCRYPTED[!17c59813193e86cc337bce848b358412b90f50bc5fe1b8b39d363cdf14a41ebe76cfba0482e7f81d076994b9f6dbfb4c!]
 
-image_build:
+image_build_task:
   #only_if: false
   auto_cancellation: false
   gce_instance:
