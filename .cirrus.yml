@@ -1,7 +1,9 @@
 gcp_credentials: ENCRYPTED[!17c59813193e86cc337bce848b358412b90f50bc5fe1b8b39d363cdf14a41ebe76cfba0482e7f81d076994b9f6dbfb4c!]
 
 image_build_task:
-  #only_if: false
+  # !README! comment out the below `only_if` to build a new image (currently, this task will be skipped)
+  # don't forget to increment the TAG in the `build-packer-image.sh` script!
+  only_if: false
   auto_cancellation: false
   gce_instance:
     image_project: ubuntu-os-cloud
@@ -29,7 +31,7 @@ test_windows_task:
     preemptible: true
     cpu: 2
     memory: 8G
-    disk: 100
+    disk: 128
   git_script: git --version
   java_script: java -version
   scanner_script: C:\sonar-scanner-4.0.0.1744\bin\sonar-scanner.bat --version
