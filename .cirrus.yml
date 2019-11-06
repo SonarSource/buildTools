@@ -3,7 +3,7 @@ gcp_credentials: ENCRYPTED[!17c59813193e86cc337bce848b358412b90f50bc5fe1b8b39d36
 image_build_task:
   # !README! comment out the below `only_if` to build a new image (currently, this task will be skipped)
   # don't forget to increment the TAG in the `build-packer-image.sh` script!
-  only_if: false
+  #only_if: false
   auto_cancellation: false
   gce_instance:
     image_project: ubuntu-os-cloud
