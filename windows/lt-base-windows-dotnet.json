@@ -59,6 +59,7 @@
         "choco install visualstudio2019-workload-webbuildtools",
         "choco install visualstudio2019-workload-manageddesktopbuildtools",
         "choco install dotnetfx --version=4.8.0.20190930",
+        "choco install netfx-4.8-devpack --version 4.8.0.20190930",
         "choco install openjdk11 --version 11.0.4.11",
         "choco install maven --version 3.6.2",
         "choco install git --version 2.23.0 --package-parameters \"/GitAndUnixToolsOnPath /NoShellIntegration\""
