@@ -118,7 +118,6 @@ elif [ "$PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
       -Dsonar.pullrequest.branch=$GITHUB_BRANCH \
       -Dsonar.pullrequest.base=$GITHUB_BASE_BRANCH \
       -Dsonar.pullrequest.key=$PULL_REQUEST \
-      -Dsonar.pullrequest.github.repository=$GITHUB_REPO \
       -B -e -V $*
   else
     echo '======= no deploy'
