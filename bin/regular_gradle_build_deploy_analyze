@@ -76,8 +76,6 @@ elif [ "$PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
     -Dsonar.pullrequest.branch=$GITHUB_BRANCH \
     -Dsonar.pullrequest.base=$GITHUB_BASE_BRANCH \
     -Dsonar.pullrequest.key=$PULL_REQUEST \
-    -Dsonar.pullrequest.provider=github \
-    -Dsonar.pullrequest.github.repository=$GITHUB_REPO \
     $*
 
 elif [[ "$GITHUB_BRANCH" == "dogfood-on-"* ]] && [ "$PULL_REQUEST" == "false" ]; then
