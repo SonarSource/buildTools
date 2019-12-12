@@ -28,6 +28,15 @@ if [ -z "$PIPELINE_ID" ]; then
   $PIPELINE_ID=$BUILD_NUMBER
 fi
 
+STD_OPTIONS="-Dsonar.host.url=$SONAR_HOST_URL 
+      -Dsonar.login=$SONAR_TOKEN 
+      -Dsonar.analysis.pipeline=$PIPELINE_ID 
+      -Dsonar.analysis.repository=$GITHUB_REPO" 
+
+STD_OPTIONS_EXT="$STD_OPTIONS 
+      -Dsonar.analysis.buildNumber=$BUILD_NUMBER 
+      -Dsonar.analysis.sha1=$GIT_SHA1"
+
 if [ "${GITHUB_BRANCH}" == "master" ] && [ "$PULL_REQUEST" == "false" ]; then
   echo '======= Build, deploy and analyze master'
 
@@ -43,13 +52,8 @@ if [ "${GITHUB_BRANCH}" == "master" ] && [ "$PULL_REQUEST" == "false" ]; then
   mvn deploy sonar:sonar \
       -Pcoverage,deploy-sonarsource,release \
       -Dmaven.test.redirectTestOutputToFile=false \
-      -Dsonar.host.url=$SONAR_HOST_URL \
-      -Dsonar.login=$SONAR_TOKEN \
+      $STD_OPTIONS_EXT \
       -Dsonar.projectVersion=$CURRENT_VERSION \
-      -Dsonar.analysis.buildNumber=$BUILD_NUMBER \
-      -Dsonar.analysis.pipeline=$PIPELINE_ID \
-      -Dsonar.analysis.sha1=$GIT_SHA1  \
-      -Dsonar.analysis.repository=$GITHUB_REPO \
       -B -e -V $*
 
 elif [[ "${GITHUB_BRANCH}" == "branch-"* ]] && [ "$PULL_REQUEST" == "false" ]; then
@@ -84,13 +88,8 @@ elif [[ "${GITHUB_BRANCH}" == "branch-"* ]] && [ "$PULL_REQUEST" == "false" ]; t
   fi
 
   mvn sonar:sonar \
-      -Dsonar.host.url=$SONAR_HOST_URL \
-      -Dsonar.login=$SONAR_TOKEN \
-      -Dsonar.branch.name=$GITHUB_BRANCH \
-      -Dsonar.analysis.buildNumber=$BUILD_NUMBER \
-      -Dsonar.analysis.pipeline=$PIPELINE_ID \
-      -Dsonar.analysis.sha1=$GIT_SHA1  \
-      -Dsonar.analysis.repository=$GITHUB_REPO
+      $STD_OPTIONS_EXT \
+      -Dsonar.branch.name=$GITHUB_BRANCH 
 
 
 elif [ "$PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
@@ -101,6 +100,10 @@ elif [ "$PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
 
   # No need for Maven phase "install" as the generated JAR files do not need to be installed
   # in Maven local repository. Phase "verify" is enough.
+  PR_OPTIONS="-Dsonar.pullrequest.branch=$GITHUB_BRANCH 
+      -Dsonar.pullrequest.base=$GITHUB_BASE_BRANCH 
+      -Dsonar.pullrequest.key=$PULL_REQUEST 
+      -Dsonar.analysis.prNumber=$PULL_REQUEST"
 
   export MAVEN_OPTS="-Xmx1G -Xms128m"
   if [ "${DEPLOY_PULL_REQUEST:-}" == "true" ]; then
@@ -108,32 +111,18 @@ elif [ "$PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
     mvn deploy sonar:sonar \
       -Pcoverage,deploy-sonarsource \
       -Dmaven.test.redirectTestOutputToFile=false \
-      -Dsonar.host.url=$SONAR_HOST_URL \
-      -Dsonar.login=$SONAR_TOKEN \
-      -Dsonar.analysis.buildNumber=$BUILD_NUMBER \
-      -Dsonar.analysis.pipeline=$PIPELINE_ID \
-      -Dsonar.analysis.sha1=$GIT_SHA1  \
-      -Dsonar.analysis.repository=$GITHUB_REPO \
-      -Dsonar.analysis.prNumber=$PULL_REQUEST \
-      -Dsonar.pullrequest.branch=$GITHUB_BRANCH \
-      -Dsonar.pullrequest.base=$GITHUB_BASE_BRANCH \
-      -Dsonar.pullrequest.key=$PULL_REQUEST \
+      $STD_OPTIONS_EXT \
+      $PR_OPTIONS \
       -B -e -V $*
   else
     echo '======= no deploy'
     mvn verify sonar:sonar \
       -Pcoverage \
       -Dmaven.test.redirectTestOutputToFile=false \
-      -Dsonar.host.url=$SONAR_HOST_URL \
-      -Dsonar.login=$SONAR_TOKEN \
+      $STD_OPTIONS \
       -Dsonar.analysis.buildNumber=$BUILD_NUMBER \
-      -Dsonar.analysis.pipeline=$PIPELINE_ID \
       -Dsonar.analysis.sha1=$PULL_REQUEST_SHA  \
-      -Dsonar.analysis.repository=$GITHUB_REPO \
-      -Dsonar.analysis.prNumber=$PULL_REQUEST \
-      -Dsonar.pullrequest.branch=$GITHUB_BRANCH \
-      -Dsonar.pullrequest.base=$GITHUB_BASE_BRANCH \
-      -Dsonar.pullrequest.key=$PULL_REQUEST \
+      $PR_OPTIONS \
       -B -e -V $*
   fi
 
@@ -152,18 +141,15 @@ elif [[ "$GITHUB_BRANCH" == "dogfood-on-"* ]] && [ "$PULL_REQUEST" == "false" ];
 elif [[ "$GITHUB_BRANCH" == "feature/long/"* ]] && [ "$PULL_REQUEST" == "false" ]; then
   echo '======= Build and analyze long lived feature branch'
     
-  mvn verify sonar:sonar \
-    -Pcoverage \
-    -Dmaven.test.redirectTestOutputToFile=false \
-    -Dsonar.host.url=$SONAR_HOST_URL \
-    -Dsonar.login=$SONAR_TOKEN \
-    -Dsonar.branch.name=$GITHUB_BRANCH \
-    -Dsonar.analysis.buildNumber=$PULL_REQUEST \
-    -Dsonar.analysis.pipeline=$PIPELINE_ID \
-    -Dsonar.analysis.sha1=$GIT_SHA1  \
-    -Dsonar.analysis.repository=$GITHUB_REPO \
-    -B -e -V $*    
-        
+    mvn verify sonar:sonar \
+      -Pcoverage \
+      -Dmaven.test.redirectTestOutputToFile=false \
+      $STD_OPTIONS \
+      -Dsonar.analysis.buildNumber=$PULL_REQUEST \
+      -Dsonar.branch.name=$GITHUB_BRANCH \
+      -Dsonar.analysis.sha1=$GIT_SHA1  \
+      -B -e -V $*    
+          
 else
   echo '======= Build, no analysis, no deploy'
 
