@@ -3,6 +3,7 @@ from main import promote
 from main import publish_all_artifacts, publish_artifact
 from main import find_buildnumber_from_sha1
 from main import upload_to_binaries
+from main import github_auth
 
 def test_repox_get_property_from_buildinfo():
   project="sonar-dummy"
@@ -23,10 +24,7 @@ def test_get_artifacts_to_publish():
   assert artifacts == 'com.sonarsource.dummy:sonar-dummy-plugin:jar'
 
 def test_publish_all_artifacts():
-  artifacts = "org.sonarsource.java:sonar-java-plugin:jar"
-  version='6.0.2.20657'
-  repo='sonarsource-public-releases'
-  print(publish_all_artifacts(artifacts,version,repo))
+  print(publish_all_artifacts('sonar-java','20657'))
 
 def test_get_version():
   project="sonar-java"
@@ -39,3 +37,13 @@ def test_find_buildnumber_from_sha1():
 
 def test_upload_to_binaries():
   upload_to_binaries('Distribution','sonarsource-public-releases','org.sonarsource.java','sonar-java-plugin','','jar','6.0.2.20657')
+
+def test_github_auth():
+  token='token'
+  project='sonar-java'
+  assert github_auth(token,project)
+
+def test_github_auth_fail():
+  token='wrongtoken'
+  project='sonar-java'
+  assert (github_auth(token,project) != True)

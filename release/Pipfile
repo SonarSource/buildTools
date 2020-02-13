@@ -10,6 +10,7 @@ requests = "*"
 paramiko = "*"
 pytest = "*"
 scp = "*"
+flask = "*"
 
 [requires]
 python_version = "3.7"
