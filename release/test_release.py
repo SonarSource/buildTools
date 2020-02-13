@@ -1,3 +1,4 @@
+import os
 from main import repox_get_property_from_buildinfo, repox_get_module_property_from_buildinfo, get_artifacts_to_publish, get_version
 from main import promote
 from main import publish_all_artifacts, publish_artifact
@@ -39,7 +40,7 @@ def test_upload_to_binaries():
   upload_to_binaries('Distribution','sonarsource-public-releases','org.sonarsource.java','sonar-java-plugin','','jar','6.0.2.20657')
 
 def test_github_auth():
-  token='token'
+  token=os.environ.get('GITHUB_TOKEN','no github token in env')  
   project='sonar-java'
   assert github_auth(token,project)
 
