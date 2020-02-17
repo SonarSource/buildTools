@@ -1,6 +1,7 @@
 How to deploy:
 
 generate requirements.txt with requirements.sh
+private ssh key id_rsa_ssuopsa has to be present in the repository before deploy
 
 gcloud functions deploy release \
   --runtime python37 --trigger-http \
