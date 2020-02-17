@@ -8,15 +8,21 @@ from main import github_auth
 
 def test_repox_get_property_from_buildinfo():
   project="sonar-dummy"
-  buildnumber="396"
+  buildnumber="316"
   repo = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
   print(repo)
   assert repo == 'sonarsource-private-qa'
 
 def test_promote():
   project="sonar-dummy"
-  buildnumber="396"
+  buildnumber="316"
   status = promote(project, buildnumber, "false")  
+  assert status == 'status:release'
+
+def test_promote_multi():
+  project="slang-enterprise"
+  buildnumber="883"
+  status = promote(project, buildnumber, True)  
   assert status == 'status:release'
 
 def test_promote_fail():
@@ -32,12 +38,22 @@ def test_promote_fail():
 
 def test_get_artifacts_to_publish():
   project="sonar-dummy"
-  buildnumber="297"
+  buildnumber="316"
   artifacts = get_artifacts_to_publish(project,buildnumber)
   assert artifacts == 'com.sonarsource.dummy:sonar-dummy-plugin:jar'
 
+def test_get_artifacts_to_publish_se():
+  project="slang-enterprise"
+  buildnumber="883"
+  artifacts = get_artifacts_to_publish(project,buildnumber)
+  print(f"artifacts: {artifacts}")
+  #assert artifacts == 'com.sonarsource.dummy:sonar-dummy-plugin:jar'  
+
 def test_publish_all_artifacts():
-  print(publish_all_artifacts('sonar-java','20657'))
+  print(publish_all_artifacts('sonar-dummy','316'))
+
+def test_publish_all_artifacts_multi():
+  print(publish_all_artifacts('slang-enterprise','883'))
 
 def test_get_version():
   project="sonar-java"
