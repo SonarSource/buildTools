@@ -46,10 +46,14 @@ def release(request):
   multi=request.args.get('multi') == "true"
   
   if validate_autorization_header(request,project) == AUTHENTICATED:  
-    promote(project,buildnumber,multi)
-    publish_all_artifacts
+    try:
+      promote(project,buildnumber,multi)
+      publish_all_artifacts
+    except Exception as e:
+      print(f"Could not get repository for {project} {buildnumber} {str(e)}")
+      return make_response(str(e),500)
   else:
-    return make_response(validate_autorization_header(request),403)
+    return make_response(validate_autorization_header(request,project),403)
 
 def github_auth(token,project):
   url = f"https://api.github.com/repos/SonarSource/{project}"
@@ -130,11 +134,8 @@ def promote(project,buildnumber,multi):
   targetrepo2="sonarsource-public-builds"
   status='release'
   
-  try:
-    repo = repox_get_module_property_from_buildinfo(project, buildnumber,'buildinfo.env.ARTIFACTORY_DEPLOY_REPO')
-    targetrepo = repo.replace('builds', 'releases')
-  except Exception as e:
-    print(f"Could not get repository for {project} {buildnumber} {str(e)}")
+  repo = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
+  targetrepo = repo.replace('builds', 'releases')
   
   print(f"Promoting build {project}#{buildnumber}")
   json_payload={

@@ -10,13 +10,25 @@ def test_repox_get_property_from_buildinfo():
   project="sonar-dummy"
   buildnumber="396"
   repo = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
+  print(repo)
   assert repo == 'sonarsource-private-qa'
 
 def test_promote():
   project="sonar-dummy"
-  buildnumber="297"
+  buildnumber="396"
   status = promote(project, buildnumber, "false")  
   assert status == 'status:release'
+
+def test_promote_fail():
+  project="sonar-dummy"
+  buildnumber="123"
+  try:
+    promote(project, buildnumber, "false")  
+  except Exception as e:
+    print(f"Could not get repository for {project} {buildnumber} {str(e)}")
+    assert 'unknown build' == str(e)
+  
+
 
 def test_get_artifacts_to_publish():
   project="sonar-dummy"

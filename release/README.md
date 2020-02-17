@@ -1,0 +1,17 @@
+How to deploy:
+
+generate requirements.txt with requirements.sh
+
+gcloud functions deploy release \
+  --runtime python37 --trigger-http \
+  --set-env-vars ARTIFACTORY_URL=https://repox.jfrog.io/repox,ARTIFACTORY_API_KEY=XXX,GPG_PASSPHRASE=XXX \
+  --region us-central1 \
+  --source=src \
+  --memory 128MB --project $GOOGLE_PROJECT_ID
+
+call: 
+RELEASE_URL=https://us-central1-language-team.cloudfunctions.net/release
+
+curl -s -H "Authorization: token $GITHUB_TOKEN" "$RELEASE_URL/$GITHUB_REPO/$BUILD_NUMBER(?multi=true)"
+
+curl -s -H "Authorization: token $GITHUB_TOKEN" "$RELEASE_URL/SonarSource/sonar-dummy/314"
