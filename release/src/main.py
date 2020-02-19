@@ -40,14 +40,14 @@ def release(request):
     Response object using `make_response`
     <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>.
   Trigger:
-    {functionBaseUrl}/promote/GITHUB_ORG/GITHUB_PROJECT/BUILD_NUMBER?multi=true
+    {functionBaseUrl}/promote/GITHUB_ORG/GITHUB_PROJECT/SHA1?multi=true
   """
   print("PATH:"+request.path)
   paths=request.path.split("/")
   project=paths[2]
-  buildnumber=paths[3]
+  sha1=paths[3]
   multi=request.args.get('multi') == "true"
-  
+  buildnumber=find_buildnumber_from_sha1(sha1)
   if validate_autorization_header(request,project) == AUTHENTICATED:  
     try:
       promote(project,buildnumber,multi)
