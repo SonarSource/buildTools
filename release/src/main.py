@@ -40,17 +40,16 @@ def release(request):
     Response object using `make_response`
     <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>.
   Trigger:
-    {functionBaseUrl}/promote/GITHUB_ORG/GITHUB_PROJECT/SHA1?multi=true
+    {functionBaseUrl}/promote/GITHUB_ORG/GITHUB_PROJECT/SHA1
   """
   print("PATH:"+request.path)
   paths=request.path.split("/")
   project=paths[2]
   sha1=paths[3]
-  multi=request.args.get('multi') == "true"
   buildnumber=find_buildnumber_from_sha1(sha1)
   if validate_autorization_header(request,project) == AUTHENTICATED:  
     try:
-      promote(project,buildnumber,multi)
+      promote(project,buildnumber)
       publish_all_artifacts(project,buildnumber)
     except Exception as e:
       print(f"Could not get repository for {project} {buildnumber} {str(e)}")
@@ -107,8 +106,8 @@ def get_artifacts_to_publish(project,buildnumber):
 def publish_all_artifacts(project,buildnumber): 
   repo = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO').replace('qa', 'builds')
   version=get_version(project,buildnumber)
-  artifacts=get_artifacts_to_publish(project,buildnumber) 
-  artifacts = artifacts.split(",")
+  allartifacts=get_artifacts_to_publish(project,buildnumber) 
+  artifacts = allartifacts.split(",")
   artifacts_count = len(artifacts)   
   if artifacts_count == 1:
     print("only 1")
@@ -131,7 +130,21 @@ def publish_artifact(artifact_to_publish,version,repo):
   print(f"{gid} {aid} {ext}")  
   return upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version)
 
-def promote(project,buildnumber,multi):
+def is_multi(project,buildnumber):
+  allartifacts=get_artifacts_to_publish(project,buildnumber) 
+  artifacts = allartifacts.split(",")
+  artifacts_count = len(artifacts)   
+  if artifacts_count == 1:
+    return False
+  ref=artifacts[0][0:3]  
+  for i in range(0, artifacts_count):      
+    current=artifacts[i - 1][0:3]
+    if current != ref:
+      return True
+  return False
+
+
+def promote(project,buildnumber):
   targetrepo="sonarsource-public-releases"
   status='release'
   
@@ -143,7 +156,8 @@ def promote(project,buildnumber,multi):
       "status": f"{status}",
       "targetRepo": f"{targetrepo}"
   }
-  if multi:
+
+  if is_multi(project, buildnumber):
     print(f"Promoting multi repositories")
     url = f"{artifactory_url}/api/plugins/execute/multiRepoPromote?params=buildName={project};buildNumber={buildnumber};src1=sonarsource-private-builds;target1=sonarsource-private-releases;src2=sonarsource-public-builds;target2=sonarsource-public-releases;status={status}"
     headers = {'X-JFrog-Art-Api': artifactory_apikey}
@@ -213,4 +227,3 @@ def find_buildnumber_from_sha1(sha1):
     if current > buildnumber:
       buildnumber=current
   return r.json()['results'][0]['build.property.value']
-  

@@ -13,6 +13,6 @@ gcloud functions deploy release \
 call: 
 RELEASE_URL=https://us-central1-language-team.cloudfunctions.net/release
 
-curl -s -H "Authorization: token $GITHUB_TOKEN" "$RELEASE_URL/$GITHUB_REPO/$BUILD_NUMBER(?multi=true)"
+curl -s -H "Authorization: token $GITHUB_TOKEN" "$RELEASE_URL/$GITHUB_REPO/$SHA1"
 
-curl -s -H "Authorization: token $GITHUB_TOKEN" "$RELEASE_URL/SonarSource/sonar-dummy/314"
+curl -s -H "Authorization: token $GITHUB_TOKEN" "$RELEASE_URL/SonarSource/sonar-dummy/3629c526389c15049fc5ca37de395746ade2991b"

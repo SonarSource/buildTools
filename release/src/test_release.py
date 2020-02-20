@@ -5,6 +5,7 @@ from main import publish_all_artifacts, publish_artifact
 from main import find_buildnumber_from_sha1
 from main import upload_to_binaries
 from main import github_auth
+from main import is_multi
 
 def test_repox_get_property_from_buildinfo():
   project="sonar-dummy"
@@ -77,3 +78,13 @@ def test_github_auth_fail():
   token='wrongtoken'
   project='sonar-java'
   assert (github_auth(token,project) != True)
+
+def test_is_multi():
+  project="slang-enterprise"
+  buildnumber="883"  
+  assert is_multi(project,buildnumber)
+
+def test_is_multi_not():
+  project="sonar-dummy"
+  buildnumber="333"  
+  assert not is_multi(project,buildnumber)
