@@ -49,7 +49,7 @@ def release(request):
   project=paths[2]
   sha1=paths[3]
   buildnumber=find_buildnumber_from_sha1(sha1)
-  if validate_autorization_header(request,project) == AUTHENTICATED:  
+  if validate_authorization_header(request, project) == AUTHENTICATED:
     try:
       promote(project,buildnumber)
       publish_all_artifacts(project,buildnumber)
@@ -57,15 +57,18 @@ def release(request):
       print(f"Could not get repository for {project} {buildnumber} {str(e)}")
       return make_response(str(e),500)
   else:
-    return make_response(validate_autorization_header(request,project),403)
+    return make_response(validate_authorization_header(request, project), 403)
 
 def github_auth(token,project):
   url = f"https://api.github.com/repos/SonarSource/{project}"
   headers = {'Authorization': f"token {token}"}
-  r = requests.get(url, headers=headers)  
-  return r.status_code == 200
+  r = requests.get(url, headers=headers)
+  if r.status_code == 200:
+    permissions = r.json().get('permissions')
+    return permissions and (permissions.get('push') or permissions.get('admin'))
+  return False
 
-def validate_autorization_header(request,project):
+def validate_authorization_header(request, project):
   if request.headers['Authorization'] and request.headers['Authorization'].split()[0] == 'token':
     if github_auth(request.headers['Authorization'].split()[1],project):
       print("Authenticated with github token")
