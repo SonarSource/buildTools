@@ -205,5 +205,12 @@ def find_buildnumber_from_sha1(sha1):
   query = f'build.properties.find({{"buildInfo.env.GIT_SHA1": "{sha1}"}}).include("buildInfo.env.BUILD_NUMBER")'
   url = f"{artifactory_url}/api/search/aql"
   headers = {'content-type': 'text/plain', 'X-JFrog-Art-Api': artifactory_apikey} 
-  r = requests.post(url, data=query, headers=headers)      
+  r = requests.post(url, data=query, headers=headers)   
+  buildnumber=0
+  for i in range(0, len(r.json()['results'])):
+    current=int(r.json()['results'][i]['build.property.value'])
+    print(f"build {current}")  
+    if current > buildnumber:
+      buildnumber=current
   return r.json()['results'][0]['build.property.value']
+  

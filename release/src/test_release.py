@@ -62,10 +62,11 @@ def test_get_version():
   print(version)
   
 def test_find_buildnumber_from_sha1():
-  assert find_buildnumber_from_sha1("2d8485ac2dede74680634b2a12665e8c9589dfae") == "20657"
+  assert find_buildnumber_from_sha1("3629c526389c15049fc5ca37de395746ade2991b") == "333"
+
 
 def test_upload_to_binaries():
-  upload_to_binaries('Distribution','sonarsource-public-releases','org.sonarsource.java','sonar-java-plugin','','jar','6.0.2.20657')
+  upload_to_binaries('sonarsource-public-releases','org.sonarsource.java','sonar-java-plugin','','jar','6.0.2.20657')
 
 def test_github_auth():
   token=os.environ.get('GITHUB_TOKEN','no github token in env')  
