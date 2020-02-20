@@ -17,8 +17,6 @@ burgrx_password = os.environ.get('BURGRX_PASSWORD', 'no burgrx password in env')
 
 AUTHENTICATED = "authenticated"
 
-GITHUB_REPOSITORY = 'sonar-dummy-oss'
-
 # [START functions_releasability_check_http]
 def releasability_check(request: Request):
     """HTTP Cloud Function.
@@ -33,28 +31,32 @@ def releasability_check(request: Request):
       {functionBaseUrl}/releasability_check/GITHUB_ORG/GITHUB_PROJECT/SHA1
     """
     print("PATH:" + request.path)
+
     paths = request.path.split("/")
+    if not paths or len(paths) != 4:
+        return make_response("Bad Request", 400)
+
     organization = paths[1]
     project = paths[2]
     sha1 = paths[3]
-
     if organization != "SonarSource":
         return make_response("Unauthorized organization", 403)
 
-    buildnumber = find_buildnumber_from_sha1(sha1)
-    authorization = validate_authorization_header(request.headers, project)
-    if authorization == AUTHENTICATED:
-        try:
+    try:
+        buildnumber = find_buildnumber_from_sha1(sha1)
+        authorization = validate_authorization_header(request.headers, project)
+        if authorization == AUTHENTICATED:
+
             version = get_version(project, buildnumber)
             releasability = releasability_checks(project, version)
             if releasability:
                 return make_response(releasability)
             return make_response("Unexpected error occurred", 500)
-        except Exception as e:
-            print(f"Could not get repository for {project} {buildnumber} {str(e)}")
-            return make_response(str(e), 500)
-    else:
-        return make_response(authorization, 403)
+        else:
+            return make_response(authorization, 403)
+    except Exception as e:
+        print(f"Could not process request for {request.path}:", e)
+        return make_response(str(e), 500)
 
 
 def validate_authorization_header(headers: Dict[str, str], project: str):
@@ -77,7 +79,7 @@ def github_auth(token: str, project: str):
     if r.status_code == 200:
         jsonobject = r.json()
         return 'permissions' in jsonobject and (
-                    jsonobject['permissions'].get('push') or jsonobject['permissions'].get('admin'))
+                jsonobject['permissions'].get('push') or jsonobject['permissions'].get('admin'))
     return False
 
 
@@ -86,10 +88,17 @@ def find_buildnumber_from_sha1(sha1: str):
     url = f"{artifactory_url}/api/search/aql"
     headers = {'content-type': 'text/plain', 'X-JFrog-Art-Api': artifactory_apikey}
     r = requests.post(url, data=query, headers=headers)
-    results = r.json()['results']
-    if len(results) != 1:
-        raise Exception(f"Unexpected number of results found for sha1 '{sha1}'. Found: '{results}'")
-    return results[0]['build.property.value']
+    results = r.json().get('results')
+
+    if not results or len(results) == 0:
+        raise Exception(f"No buildnumber found for sha1 '{sha1}'")
+
+    latest_build = -1
+    for res in results:
+        current = int(res.get('build.property.value'))
+        if current > latest_build:
+            latest_build = current
+    return str(latest_build)
 
 
 def get_version(project: str, buildnumber: str):
@@ -103,29 +112,41 @@ def get_version(project: str, buildnumber: str):
         raise Exception('unknown build')
 
 
-def releasability_checks(project: str, buildnumber: str):
+def releasability_checks(project: str, version: str):
     r"""Starts the releasability check operation. Post the start releasability HTTP request to Burgrx and polls until
       all checks have completed.
 
       :param project: Github project name, ex: 'sonar-dummy'
-      :param buildnumber: build number to be checked for releasability.
+      :param version: full version to be checked for releasability.
       :return: True if releasability check succeeded, False otherwise.
       """
 
-    print(f"Starting releasability check: {project}#{buildnumber}")
-
-    url = f"{burgrx_url}/api/project/SonarSource/{project}/releasability/start/{buildnumber}"
+    print(f"Starting releasability check: {project}#{version}")
+    url = f"{burgrx_url}/api/project/SonarSource/{project}/releasability/start/{version}"
     response = requests.post(url, auth=HTTPBasicAuth(burgrx_user, burgrx_password))
-
-    if response.status_code == 200 and response.json()['message'] == "done":
+    if response.status_code == 200 and response.json().get('message') == "done":
         print(f"Releasability checks started successfully")
-        return start_polling_releasability_status(project, buildnumber)
+        return start_polling_releasability_status(project, version)
     else:
         print(f"Releasability checks failed to start: {response}")
         return False
 
 
-def start_polling_releasability_status(project: str, buildnumber: str, step: int = 4, timeout: int = 300):
+def start_polling_releasability_status(project: str,
+                                       version: str,
+                                       step: int = 4,
+                                       timeout: int = 300,
+                                       check_releasable: bool = True):
+    r"""Starts polling Burgrx for latest releasability status.
+
+      :param project: Github project name, ex: 'sonar-dummy'
+      :param version: full version to be checked for releasability.
+      :param step: step in seconds between polls. (For testing, otherwise use default value)
+      :param timeout: timeout in seconds for attempting to get status. (For testing, otherwise use default value)
+      :param check_releasable: whether should check for 'releasable' flag in json response. (For testing, otherwise use default value)
+      :return: Metadata containing detailed releasability information, False if an unexpected error occurred.
+      """
+
     url_encoded_project = urllib.parse.quote(f"SonarSource/{project}", safe='')
     branch = 'master'
     url = f"{burgrx_url}/api/commitPipelinesStages?project={url_encoded_project}&branch={branch}&nbOfCommits=1&startAtCommit=0"
@@ -133,17 +154,20 @@ def start_polling_releasability_status(project: str, buildnumber: str, step: int
     try:
         releasability = polling.poll(
             lambda: get_latest_releasability_stage(requests.get(url, auth=HTTPBasicAuth(burgrx_user, burgrx_password)),
-                                                   buildnumber), step=step, timeout=timeout)
+                                                   version,
+                                                   check_releasable),
+            step=step,
+            timeout=timeout)
         print(f"Releasability checks finished with status '{releasability['status']}'")
-        return releasability
+        return releasability.get('metadata')
     except TimeoutException:
         print("Releasability timed out")
-    except Exception as re:
-        print(f"Cannot complete releasability checks: {re.message}")
+    except Exception as e:
+        print(f"Cannot complete releasability checks:", e)
     return False
 
 
-def get_latest_releasability_stage(response: Response, buildnumber: str):
+def get_latest_releasability_stage(response: Response, version: str, check_releasable: bool = True):
     print("Polling releasability status...")
 
     if response.status_code != 200:
@@ -154,11 +178,11 @@ def get_latest_releasability_stage(response: Response, buildnumber: str):
         raise Exception(f"Unexpected response from burgrx: '{jsonobjects}'")
 
     pipelines = jsonobjects[0].get('pipelines') or []
-    pipeline = next((x for x in pipelines if x.get('version') == buildnumber), None)
+    pipeline = next((x for x in pipelines if x.get('version') == version), None)
     if not pipeline:
-        raise Exception(f"No pipeline found for version '{buildnumber}': {pipelines}")
+        raise Exception(f"No pipeline found for version '{version}': {pipelines}")
 
-    if not pipeline.get('releasable'):
+    if check_releasable and not pipeline.get('releasable'):
         raise Exception(f"Pipeline '{pipeline}' is not releasable")
 
     stages = pipeline.get('stages') or []
@@ -173,4 +197,3 @@ def get_latest_releasability_stage(response: Response, buildnumber: str):
 
 def is_finished(status: str):
     return status == 'errored' or status == 'failed' or status == 'passed'
-
