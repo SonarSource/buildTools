@@ -122,6 +122,7 @@ def get_artifacts_to_publish(project,buildnumber):
   return artifacts
 
 def publish_all_artifacts(project,buildnumber): 
+  print(f"publishing artifats for {project}#{buildnumber}")
   repo = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO').replace('qa', 'builds')
   version=get_version(project,buildnumber)
   allartifacts=get_artifacts_to_publish(project,buildnumber) 
@@ -139,6 +140,7 @@ def publish_all_artifacts(project,buildnumber):
 
 
 def publish_artifact(artifact_to_publish,version,repo): 
+  print(f"publishing {artifact_to_publish}#{version}")
   artifact = artifact_to_publish.split(":")
   gid = artifact[0]
   aid = artifact[1]

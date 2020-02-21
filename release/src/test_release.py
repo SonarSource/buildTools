@@ -51,7 +51,7 @@ def test_get_artifacts_to_publish_se():
   #assert artifacts == 'com.sonarsource.dummy:sonar-dummy-plugin:jar'  
 
 def test_publish_all_artifacts():
-  print(publish_all_artifacts('sonar-dummy','316'))
+  print(publish_all_artifacts('sonar-dummy','344'))
 
 def test_publish_all_artifacts_multi():
   print(publish_all_artifacts('slang-enterprise','883'))
