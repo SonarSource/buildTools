@@ -5,7 +5,7 @@ private ssh key id_rsa_ssuopsa has to be present in the repository before deploy
 
 gcloud functions deploy release \
   --runtime python37 --trigger-http \
-  --set-env-vars ARTIFACTORY_URL=https://repox.jfrog.io/repox,ARTIFACTORY_API_KEY=XXX,GPG_PASSPHRASE=XXX \
+  --set-env-vars ARTIFACTORY_URL=https://repox.jfrog.io/repox,ARTIFACTORY_API_KEY=XXX,GPG_PASSPHRASE=XXX,PATH_PREFIX=/sonarsource/var/opt/sonarsource/binaries.sonarsource.com/sonarsource.bintray.com/ \
   --region us-central1 \
   --source=src \
   --memory 128MB --project $GOOGLE_PROJECT_ID

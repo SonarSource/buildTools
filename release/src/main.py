@@ -18,10 +18,12 @@ notify burgr
 artifactory_apikey=os.environ.get('ARTIFACTORY_API_KEY','no api key in env')  
 passphrase=os.environ.get('GPG_PASSPHRASE','no GPG_PASSPHRASE in env')  
 
+#binaries_path_prefix='/tmp'
+binaries_path_prefix=os.environ.get('PATH_PREFIX','/tmp')
+
 artifactory_url='https://repox.jfrog.io/repox'
 binaries_host='binaries.sonarsource.com'
 binaries_url=f"https://{binaries_host}"
-binaries_path_prefix='/tmp'
 ssh_user='ssuopsa'
 ssh_key='id_rsa_ssuopsa'
 AUTHENTICATED="authenticated"
