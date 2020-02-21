@@ -28,22 +28,23 @@ def releasability_check(request: Request):
       Response object using `make_response`
       <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>.
     Trigger:
-      {functionBaseUrl}/releasability_check/GITHUB_ORG/GITHUB_PROJECT/SHA1
+      {functionBaseUrl}/releasability_check/GITHUB_ORG/GITHUB_PROJECT/GITHUB_BRANCH/SHA1
     """
     print("PATH:" + request.path)
 
     paths = request.path.split("/")
-    if not paths or len(paths) != 4:
+    if not paths or len(paths) != 5:
         return make_response("Bad Request", 400)
 
     organization = paths[1]
     project = paths[2]
-    sha1 = paths[3]
+    branch = paths[3]
+    sha1 = paths[4]
     if organization != "SonarSource":
         return make_response("Unauthorized organization", 403)
 
     try:
-        buildnumber = find_buildnumber_from_sha1(sha1)
+        buildnumber = find_buildnumber_from_sha1(branch, sha1)
         authorization = validate_authorization_header(request.headers, project)
         if authorization == AUTHENTICATED:
 
@@ -83,13 +84,12 @@ def github_auth(token: str, project: str):
     return False
 
 
-def find_buildnumber_from_sha1(sha1: str):
-    query = f'build.properties.find({{"buildInfo.env.GIT_SHA1": "{sha1}"}}).include("buildInfo.env.BUILD_NUMBER")'
+def find_buildnumber_from_sha1(branch: str, sha1: str):
+    query = f'build.properties.find({{"$and":[{{"buildInfo.env.GIT_SHA1":"{sha1}"}},{{"buildInfo.env.GITHUB_BRANCH":"{branch}"}}]}}).include("buildInfo.env.BUILD_NUMBER")'
     url = f"{artifactory_url}/api/search/aql"
     headers = {'content-type': 'text/plain', 'X-JFrog-Art-Api': artifactory_apikey}
     r = requests.post(url, data=query, headers=headers)
     results = r.json().get('results')
-
     if not results or len(results) == 0:
         raise Exception(f"No buildnumber found for sha1 '{sha1}'")
 
