@@ -50,21 +50,20 @@ def test_validate_authorization_header_missing():
 
 
 def test_find_buildnumber_from_sha1():
-    assert find_buildnumber_from_sha1("3629c526389c15049fc5ca37de395746ade2991b") == "333"
+    assert find_buildnumber_from_sha1("master", "3629c526389c15049fc5ca37de395746ade2991b") == "335"
 
 
 def test_find_buildnumber_from_sha1_fail():
     with pytest.raises(Exception) as e:
-        find_buildnumber_from_sha1("a80cfd8f9409690a3204ab7feaaeac19f1bed835")
-    assert "No buildnumber found for sha1 'a80cfd8f9409690a3204ab7feaaeac19f1bed835'" in str(
-        e.value)
+        find_buildnumber_from_sha1("master", "a80cfd8f9409690a3204ab7feaaeac19f1bed835")
+    assert "No buildnumber found for sha1 'a80cfd8f9409690a3204ab7feaaeac19f1bed835'" in str(e.value)
 
 
 def test_get_version():
     project = "sonar-dummy"
-    buildnumber = "322"
+    buildnumber = "335"
     version = get_version(project, buildnumber)
-    assert version == "10.0.0.322"
+    assert version == "10.0.0.335"
 
 
 def test_get_version_fail():
@@ -396,7 +395,7 @@ def test_releasability_check():
                   status=200)
 
     app = flask.Flask(__name__)
-    with app.test_request_context("/SonarSource/sonar-dummy/3629c526389c15049fc5ca37de395746ade2991b",
+    with app.test_request_context("/SonarSource/sonar-dummy/master/3629c526389c15049fc5ca37de395746ade2991b",
                                   headers=headers):
         result = releasability_check(flask.request)
 
@@ -413,7 +412,7 @@ def test_releasability_check_fail():
                   status=403)
 
     app = flask.Flask(__name__)
-    with app.test_request_context("/SonarSource/sonar-dummy/3629c526389c15049fc5ca37de395746ade2991b",
+    with app.test_request_context("/SonarSource/sonar-dummy/master/3629c526389c15049fc5ca37de395746ade2991b",
                                   headers=headers):
         result = releasability_check(flask.request)
 
@@ -432,7 +431,7 @@ def test_releasability_check_bad_request():
 
 def test_releasability_check_unauthorized_org():
     app = flask.Flask(__name__)
-    with app.test_request_context("/AnotherOrg/sonar-dummy/3629c526389c15049fc5ca37de395746ade2991b"):
+    with app.test_request_context("/AnotherOrg/sonar-dummy/master/3629c526389c15049fc5ca37de395746ade2991b"):
         result = releasability_check(flask.request)
 
     assert result.status_code == 403

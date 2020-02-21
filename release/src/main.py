@@ -50,14 +50,15 @@ def release(request):
     Response object using `make_response`
     <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>.
   Trigger:
-    {functionBaseUrl}/promote/GITHUB_ORG/GITHUB_PROJECT/SHA1
+    {functionBaseUrl}/promote/GITHUB_ORG/GITHUB_PROJECT/GITHUB_BRANCH/SHA1
   """
   print("PATH:"+request.path)
   paths=request.path.split("/")
   org=paths[1]
   project=paths[2]
-  sha1=paths[3]
-  buildnumber=find_buildnumber_from_sha1(sha1)
+  branch=paths[3]
+  sha1=paths[4]
+  buildnumber=find_buildnumber_from_sha1(branch,sha1)
   branch=repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.GITHUB_BRANCH')
   if validate_authorization_header(request, project) == AUTHENTICATED:
     try:
@@ -232,18 +233,21 @@ def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
   release_url = f"{binaries_url}/{binaries_repo}/{aid}/{aid}-{version}.{ext}" 
   return release_url
 
-def find_buildnumber_from_sha1(sha1):  
-  query = f'build.properties.find({{"buildInfo.env.GIT_SHA1": "{sha1}"}}).include("buildInfo.env.BUILD_NUMBER")'
+def find_buildnumber_from_sha1(branch: str, sha1: str):
+  query = f'build.properties.find({{"$and":[{{"buildInfo.env.GIT_SHA1":"{sha1}"}},{{"buildInfo.env.GITHUB_BRANCH":"{branch}"}}]}}).include("buildInfo.env.BUILD_NUMBER")'
   url = f"{artifactory_url}/api/search/aql"
-  headers = {'content-type': 'text/plain', 'X-JFrog-Art-Api': artifactory_apikey} 
-  r = requests.post(url, data=query, headers=headers)   
-  buildnumber=0
-  for i in range(0, len(r.json()['results'])):
-    current=int(r.json()['results'][i]['build.property.value'])
-    print(f"build {current}")  
-    if current > buildnumber:
-      buildnumber=current
-  return r.json()['results'][0]['build.property.value']
+  headers = {'content-type': 'text/plain', 'X-JFrog-Art-Api': artifactory_apikey}
+  r = requests.post(url, data=query, headers=headers)
+  results = r.json().get('results')
+  if not results or len(results) == 0:
+    raise Exception(f"No buildnumber found for sha1 '{sha1}'")
+
+  latest_build = -1
+  for res in results:
+    current = int(res.get('build.property.value'))
+    if current > latest_build:
+      latest_build = current
+  return str(latest_build)
 
 def notify_burgr(org,project,buildnumber,branch,sha1,status):  
   payload={

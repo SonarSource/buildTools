@@ -13,6 +13,6 @@ gcloud functions deploy releasability_check \
 call: 
 RELEASABILITY_URL=https://us-central1-language-team.cloudfunctions.net/releasability_check
 
-curl -s -H "Authorization: token $GITHUB_TOKEN" "$RELEASABILITY_URL/$GITHUB_REPO/$SHA1"
+curl -s -H "Authorization: token $GITHUB_TOKEN" "$RELEASABILITY_URL/$GITHUB_REPO/$GITHUB_BRANCH/$SHA1"
 
-curl -s -H "Authorization: token $GITHUB_TOKEN" "$RELEASABILITY_URL/SonarSource/sonar-dummy/3629c526389c15049fc5ca37de395746ade2991b"
+curl -s -H "Authorization: token $GITHUB_TOKEN" "$RELEASABILITY_URL/SonarSource/sonar-dummy/master/3629c526389c15049fc5ca37de395746ade2991b"

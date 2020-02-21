@@ -63,7 +63,7 @@ def test_get_version():
   print(version)
   
 def test_find_buildnumber_from_sha1():
-  assert find_buildnumber_from_sha1("3629c526389c15049fc5ca37de395746ade2991b") == "333"
+  assert find_buildnumber_from_sha1("master", "3629c526389c15049fc5ca37de395746ade2991b") == "335"
 
 
 def test_upload_to_binaries():
