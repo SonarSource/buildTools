@@ -7,6 +7,9 @@ import paramiko
 from scp import SCPClient
 from flask import escape
 from flask import make_response
+from datetime import datetime, timezone
+from requests.auth import HTTPBasicAuth
+from requests.models import Response
 
 '''
 x Promote
@@ -20,6 +23,11 @@ passphrase=os.environ.get('GPG_PASSPHRASE','no GPG_PASSPHRASE in env')
 
 #binaries_path_prefix='/tmp'
 binaries_path_prefix=os.environ.get('PATH_PREFIX','/tmp')
+
+#burgr
+burgrx_url = 'https://burgrx.sonarsource.com'
+burgrx_user = os.environ.get('BURGRX_USER', 'no burgrx user in env')
+burgrx_password = os.environ.get('BURGRX_PASSWORD', 'no burgrx password in env')
 
 artifactory_url='https://repox.jfrog.io/repox'
 binaries_host='binaries.sonarsource.com'
@@ -46,14 +54,18 @@ def release(request):
   """
   print("PATH:"+request.path)
   paths=request.path.split("/")
+  org=paths[1]
   project=paths[2]
   sha1=paths[3]
   buildnumber=find_buildnumber_from_sha1(sha1)
+  branch=repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.GITHUB_BRANCH')
   if validate_authorization_header(request, project) == AUTHENTICATED:
     try:
       promote(project,buildnumber)
       publish_all_artifacts(project,buildnumber)
+      notify_burgr(org,project,buildnumber,branch,sha1,'passed')
     except Exception as e:
+      notify_burgr(org,project,buildnumber,branch,sha1,'failed')
       print(f"Could not get repository for {project} {buildnumber} {str(e)}")
       return make_response(str(e),500)
   else:
@@ -232,3 +244,25 @@ def find_buildnumber_from_sha1(sha1):
     if current > buildnumber:
       buildnumber=current
   return r.json()['results'][0]['build.property.value']
+
+def notify_burgr(org,project,buildnumber,branch,sha1,status):  
+  payload={
+    'repository': f"{org}/{project}",
+    'pipeline': buildnumber,
+    'name': 'RELEASE',
+    'system': 'github',
+    'type': 'release',
+    'number': buildnumber,
+    'branch': 'master',
+    'sha1': sha1,
+    'url':f"https://github.com/{org}/{project}/releases",
+    'status': status,
+    'metadata': '',
+    'started_at':datetime.now(timezone.utc).astimezone().isoformat(),
+    'fnished_at':datetime.now(timezone.utc).astimezone().isoformat()
+  }
+  print(f"burgr payload:{payload}")
+  url=f"{burgrx_url}/api/stage"
+  r = requests.post(url, json=payload, auth=HTTPBasicAuth(burgrx_user, burgrx_password)) 
+  if r.status_code != 201:          
+    print(f"burgr notification failed code:{r.status_code}" )   
