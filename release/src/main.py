@@ -57,8 +57,8 @@ def release(request):
       promote(project,buildnumber)
       publish_all_artifacts(project,buildnumber)      
       notify_burgr(org,project,buildnumber,branch,sha1,'passed')
-      if "org.sonarsource" in get_artifacts_to_publish(project,buildnumber):
-        distribute-build(project,buildnumber)
+      if check_public(project,buildnumber):
+        distribute_build(project,buildnumber)
     except Exception as e:
       notify_burgr(org,project,buildnumber,branch,sha1,'failed')
       print(f"Could not get repository for {project} {buildnumber} {str(e)}")
@@ -251,7 +251,11 @@ def notify_burgr(org,project,buildnumber,branch,sha1,status):
   if r.status_code != 201:          
     print(f"burgr notification failed code:{r.status_code}" )   
 
-def distribute-build(project,buildnumber):
+def check_public(project,buildnumber):
+  artifacts = get_artifacts_to_publish(project,buildnumber)
+  return "org.sonarsource" in artifacts
+
+def distribute_build(project,buildnumber):
   payload={ 
     "targetRepo": bintray_target_repo, 
     "sourceRepos" : ["sonarsource-public-releases"]  
