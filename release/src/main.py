@@ -11,17 +11,9 @@ from datetime import datetime, timezone
 from requests.auth import HTTPBasicAuth
 from requests.models import Response
 
-'''
-x Promote
-x Push to binaries
-x Tag github
-notify burgr
-'''
-
 artifactory_apikey=os.environ.get('ARTIFACTORY_API_KEY','no api key in env')  
 passphrase=os.environ.get('GPG_PASSPHRASE','no GPG_PASSPHRASE in env')  
 
-#binaries_path_prefix='/tmp'
 binaries_path_prefix=os.environ.get('PATH_PREFIX','/tmp')
 
 #burgr
@@ -50,16 +42,15 @@ def release(request):
     Response object using `make_response`
     <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>.
   Trigger:
-    {functionBaseUrl}/promote/GITHUB_ORG/GITHUB_PROJECT/GITHUB_BRANCH/SHA1
+    {functionBaseUrl}/promote/GITHUB_ORG/GITHUB_PROJECT/BUILD_NUMBER
   """
   print("PATH:"+request.path)
   paths=request.path.split("/")
   org=paths[1]
   project=paths[2]
-  branch=paths[3]
-  sha1=paths[4]
-  buildnumber=find_buildnumber_from_sha1(branch,sha1)
+  buildnumber=paths[3]
   branch=repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.GITHUB_BRANCH')
+  sha1=repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.GIT_SHA1')
   if validate_authorization_header(request, project) == AUTHENTICATED:
     try:
       promote(project,buildnumber)
@@ -235,22 +226,6 @@ def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
   release_url = f"{binaries_url}/{binaries_repo}/{aid}/{aid}-{version}.{ext}" 
   return release_url
 
-def find_buildnumber_from_sha1(branch: str, sha1: str):
-  query = f'build.properties.find({{"$and":[{{"buildInfo.env.GIT_SHA1":"{sha1}"}},{{"buildInfo.env.GITHUB_BRANCH":"{branch}"}}]}}).include("buildInfo.env.BUILD_NUMBER")'
-  url = f"{artifactory_url}/api/search/aql"
-  headers = {'content-type': 'text/plain', 'X-JFrog-Art-Api': artifactory_apikey}
-  r = requests.post(url, data=query, headers=headers)
-  results = r.json().get('results')
-  if not results or len(results) == 0:
-    raise Exception(f"No buildnumber found for sha1 '{sha1}'")
-
-  latest_build = -1
-  for res in results:
-    current = int(res.get('build.property.value'))
-    if current > latest_build:
-      latest_build = current
-  return str(latest_build)
-
 def notify_burgr(org,project,buildnumber,branch,sha1,status):  
   payload={
     'repository': f"{org}/{project}",
@@ -259,7 +234,7 @@ def notify_burgr(org,project,buildnumber,branch,sha1,status):
     'system': 'github',
     'type': 'release',
     'number': buildnumber,
-    'branch': 'master',
+    'branch': branch,
     'sha1': sha1,
     'url':f"https://github.com/{org}/{project}/releases",
     'status': status,
