@@ -6,9 +6,8 @@ import pytest
 import responses
 from requests import Response
 
-from main import get_version, find_buildnumber_from_sha1, github_auth, validate_authorization_header, AUTHENTICATED, \
-    is_finished, get_latest_releasability_stage, start_polling_releasability_status, releasability_checks, \
-    releasability_check
+from main import github_auth, validate_authorization_header, AUTHENTICATED, is_finished, get_latest_releasability_stage, \
+    start_polling_releasability_status, releasability_checks, releasability_check
 
 
 def test_validate_authorization_header():
@@ -47,31 +46,6 @@ def test_validate_authorization_header_missing():
     headers = {}
     project = 'sonar-dummy'
     assert validate_authorization_header(headers, project) == "Missing access token"
-
-
-def test_find_buildnumber_from_sha1():
-    assert find_buildnumber_from_sha1("master", "3629c526389c15049fc5ca37de395746ade2991b") == "335"
-
-
-def test_find_buildnumber_from_sha1_fail():
-    with pytest.raises(Exception) as e:
-        find_buildnumber_from_sha1("master", "a80cfd8f9409690a3204ab7feaaeac19f1bed835")
-    assert "No buildnumber found for sha1 'a80cfd8f9409690a3204ab7feaaeac19f1bed835'" in str(e.value)
-
-
-def test_get_version():
-    project = "sonar-dummy"
-    buildnumber = "335"
-    version = get_version(project, buildnumber)
-    assert version == "10.0.0.335"
-
-
-def test_get_version_fail():
-    project = "sonar-dummy-no-project"
-    buildnumber = "322"
-    with pytest.raises(Exception) as e:
-        get_version(project, buildnumber)
-    assert "unknown build" in str(e.value)
 
 
 def test_github_auth():
@@ -322,30 +296,33 @@ def test_releasability_checks_fail(capsys):
                   json={},
                   status=200)
 
-    result = releasability_checks(project, version)
+    with pytest.raises(Exception) as e:
+        releasability_checks(project, version)
     captured = capsys.readouterr()
-    assert result is False
-    assert captured.out == "Starting releasability check: sonar-dummy-oss#1.0.0\nReleasability checks failed to start: <Response [200]>\n"
+    assert str(e.value) == "Releasability checks failed to start: ''"
+    assert captured.out == "Starting releasability check: sonar-dummy-oss#1.0.0\nReleasability checks failed to start: <Response [200]> ''\n"
 
     responses.replace(responses.POST,
                       f"https://burgrx.sonarsource.com/api/project/SonarSource/{project}/releasability/start/{version}",
-                      json={"message": "other"},
+                      json={"message": "no promoted artifact found"},
                       status=200)
 
-    result = releasability_checks(project, version)
+    with pytest.raises(Exception) as e:
+        releasability_checks(project, version)
     captured = capsys.readouterr()
-    assert result is False
-    assert captured.out == "Starting releasability check: sonar-dummy-oss#1.0.0\nReleasability checks failed to start: <Response [200]>\n"
+    assert str(e.value) == "Releasability checks failed to start: 'no promoted artifact found'"
+    assert captured.out == "Starting releasability check: sonar-dummy-oss#1.0.0\nReleasability checks failed to start: <Response [200]> 'no promoted artifact found'\n"
 
     responses.replace(responses.POST,
                       f"https://burgrx.sonarsource.com/api/project/SonarSource/{project}/releasability/start/{version}",
                       json={"message": "done"},
                       status=400)
 
-    result = releasability_checks(project, version)
+    with pytest.raises(Exception) as e:
+        releasability_checks(project, version)
     captured = capsys.readouterr()
-    assert result is False
-    assert captured.out == "Starting releasability check: sonar-dummy-oss#1.0.0\nReleasability checks failed to start: <Response [400]>\n"
+    assert str(e.value) == "Releasability checks failed to start: 'done'"
+    assert captured.out == "Starting releasability check: sonar-dummy-oss#1.0.0\nReleasability checks failed to start: <Response [400]> 'done'\n"
 
     responses.replace(responses.POST,
                       f"https://burgrx.sonarsource.com/api/project/SonarSource/{project}/releasability/start/{version}",
@@ -368,19 +345,9 @@ def test_releasability_check():
     version = "1.0.0.222"
     metadata = {"status": "ERRORED"}
 
-    responses.add(responses.POST,
-                  "https://repox.jfrog.io/repox/api/search/aql",
-                  json={"results": [{"build.property.value": "222"}]},
-                  status=200)
-
     responses.add(responses.GET,
                   "https://api.github.com/repos/SonarSource/sonar-dummy",
                   json={"permissions": {"push": True}},
-                  status=200)
-
-    responses.add(responses.GET,
-                  "https://repox.jfrog.io/repox/api/build/sonar-dummy/222",
-                  json={"buildInfo": {"modules": [{"id": "sonar-dummy:1.0.0.222"}]}},
                   status=200)
 
     responses.add(responses.POST,
@@ -395,29 +362,49 @@ def test_releasability_check():
                   status=200)
 
     app = flask.Flask(__name__)
-    with app.test_request_context("/SonarSource/sonar-dummy/master/3629c526389c15049fc5ca37de395746ade2991b",
-                                  headers=headers):
+    with app.test_request_context("/SonarSource/sonar-dummy/1.0.0.222", headers=headers):
         result = releasability_check(flask.request)
 
     assert result.status_code == 200
     assert result.data == b'{"status":"ERRORED"}\n'
 
+@responses.activate
+def test_releasability_no_artifact():
+    headers = {'Authorization': 'token myMockedToken'}
+    project = "sonar-dummy"
+    version = "1.0.0.222"
+
+    responses.add(responses.GET,
+                  "https://api.github.com/repos/SonarSource/sonar-dummy",
+                  json={"permissions": {"push": True}},
+                  status=200)
+
+    responses.add(responses.POST,
+                  f"https://burgrx.sonarsource.com/api/project/SonarSource/{project}/releasability/start/{version}",
+                  json={"message": "no promoted artifact found"},
+                  status=404)
+
+    app = flask.Flask(__name__)
+    with app.test_request_context("/SonarSource/sonar-dummy/1.0.0.222", headers=headers):
+        result = releasability_check(flask.request)
+
+    assert result.status_code == 500
+    assert result.data == b"Releasability checks failed to start: 'no promoted artifact found'"
 
 @responses.activate
 def test_releasability_check_fail():
     headers = {'Authorization': 'token myMockedToken'}
-    responses.add(responses.POST,
-                  "https://repox.jfrog.io/repox/api/search/aql",
-                  json={},
-                  status=403)
+    responses.add(responses.GET,
+                  "https://api.github.com/repos/SonarSource/sonar-dummy",
+                  json={"permissions": {"push": False}},
+                  status=200)
 
     app = flask.Flask(__name__)
-    with app.test_request_context("/SonarSource/sonar-dummy/master/3629c526389c15049fc5ca37de395746ade2991b",
-                                  headers=headers):
+    with app.test_request_context("/SonarSource/sonar-dummy/1.0.0.222", headers=headers):
         result = releasability_check(flask.request)
 
-    assert result.status_code == 500
-    assert result.data == b"No buildnumber found for sha1 '3629c526389c15049fc5ca37de395746ade2991b'"
+    assert result.status_code == 403
+    assert result.data == b"Wrong access token"
 
 
 def test_releasability_check_bad_request():
@@ -431,7 +418,7 @@ def test_releasability_check_bad_request():
 
 def test_releasability_check_unauthorized_org():
     app = flask.Flask(__name__)
-    with app.test_request_context("/AnotherOrg/sonar-dummy/master/3629c526389c15049fc5ca37de395746ade2991b"):
+    with app.test_request_context("/AnotherOrg/sonar-dummy/3629c526389c15049fc5ca37de395746ade2991b"):
         result = releasability_check(flask.request)
 
     assert result.status_code == 403
