@@ -5,7 +5,7 @@ export GOOGLE_PROJECT_ID=language-team
 
 gcloud functions deploy releasability_check \
   --runtime python37 --trigger-http \
-  --set-env-vars ARTIFACTORY_API_KEY=$ARTIFACTORY_API_KEY,BURGRX_USER=$BURGRX_USER,BURGRX_PASSWORD=$BURGRX_PASSWORD \
+  --set-env-vars BURGRX_USER=$BURGRX_USER,BURGRX_PASSWORD=$BURGRX_PASSWORD \
   --region us-central1 \
   --memory 128MB \
   --project $GOOGLE_PROJECT_ID \

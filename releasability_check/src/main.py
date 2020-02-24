@@ -8,9 +8,6 @@ from requests.auth import HTTPBasicAuth
 from requests.models import Response
 from typing import Dict
 
-artifactory_apikey = os.environ.get('ARTIFACTORY_API_KEY', 'no api key in env')
-artifactory_url = 'https://repox.jfrog.io/repox'
-
 burgrx_url = 'https://burgrx.sonarsource.com'
 burgrx_user = os.environ.get('BURGRX_USER', 'no burgrx user in env')
 burgrx_password = os.environ.get('BURGRX_PASSWORD', 'no burgrx password in env')
@@ -28,27 +25,23 @@ def releasability_check(request: Request):
       Response object using `make_response`
       <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>.
     Trigger:
-      {functionBaseUrl}/releasability_check/GITHUB_ORG/GITHUB_PROJECT/GITHUB_BRANCH/SHA1
+      {functionBaseUrl}/releasability_check/GITHUB_ORG/GITHUB_PROJECT/VERSION
     """
     print("PATH:" + request.path)
 
     paths = request.path.split("/")
-    if not paths or len(paths) != 5:
+    if not paths or len(paths) != 4:
         return make_response("Bad Request", 400)
 
     organization = paths[1]
     project = paths[2]
-    branch = paths[3]
-    sha1 = paths[4]
+    version = paths[3]
     if organization != "SonarSource":
         return make_response("Unauthorized organization", 403)
 
     try:
-        buildnumber = find_buildnumber_from_sha1(branch, sha1)
         authorization = validate_authorization_header(request.headers, project)
         if authorization == AUTHENTICATED:
-
-            version = get_version(project, buildnumber)
             releasability = releasability_checks(project, version)
             if releasability:
                 return make_response(releasability)
@@ -84,34 +77,6 @@ def github_auth(token: str, project: str):
     return False
 
 
-def find_buildnumber_from_sha1(branch: str, sha1: str):
-    query = f'build.properties.find({{"$and":[{{"buildInfo.env.GIT_SHA1":"{sha1}"}},{{"buildInfo.env.GITHUB_BRANCH":"{branch}"}}]}}).include("buildInfo.env.BUILD_NUMBER")'
-    url = f"{artifactory_url}/api/search/aql"
-    headers = {'content-type': 'text/plain', 'X-JFrog-Art-Api': artifactory_apikey}
-    r = requests.post(url, data=query, headers=headers)
-    results = r.json().get('results')
-    if not results or len(results) == 0:
-        raise Exception(f"No buildnumber found for sha1 '{sha1}'")
-
-    latest_build = -1
-    for res in results:
-        current = int(res.get('build.property.value'))
-        if current > latest_build:
-            latest_build = current
-    return str(latest_build)
-
-
-def get_version(project: str, buildnumber: str):
-    url = f"{artifactory_url}/api/build/{project}/{buildnumber}"
-    headers = {'content-type': 'application/json', 'X-JFrog-Art-Api': artifactory_apikey}
-    r = requests.get(url, headers=headers)
-    buildinfo = r.json()
-    if r.status_code == 200:
-        return buildinfo['buildInfo']['modules'][0]['id'].split(":")[-1]
-    else:
-        raise Exception('unknown build')
-
-
 def releasability_checks(project: str, version: str):
     r"""Starts the releasability check operation. Post the start releasability HTTP request to Burgrx and polls until
       all checks have completed.
@@ -124,12 +89,13 @@ def releasability_checks(project: str, version: str):
     print(f"Starting releasability check: {project}#{version}")
     url = f"{burgrx_url}/api/project/SonarSource/{project}/releasability/start/{version}"
     response = requests.post(url, auth=HTTPBasicAuth(burgrx_user, burgrx_password))
-    if response.status_code == 200 and response.json().get('message') == "done":
+    message = response.json().get('message', '')
+    if response.status_code == 200 and message == "done":
         print(f"Releasability checks started successfully")
         return start_polling_releasability_status(project, version)
     else:
-        print(f"Releasability checks failed to start: {response}")
-        return False
+        print(f"Releasability checks failed to start: {response} '{message}'")
+        raise Exception(f"Releasability checks failed to start: '{message}'")
 
 
 def start_polling_releasability_status(project: str,
