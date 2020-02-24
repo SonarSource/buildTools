@@ -2,35 +2,34 @@ import os
 from main import repox_get_property_from_buildinfo, repox_get_module_property_from_buildinfo, get_artifacts_to_publish, get_version
 from main import promote
 from main import publish_all_artifacts, publish_artifact
-from main import find_buildnumber_from_sha1
 from main import upload_to_binaries
 from main import github_auth
 from main import is_multi
 
 def test_repox_get_property_from_buildinfo():
   project="sonar-dummy"
-  buildnumber="316"
+  buildnumber="359"
   repo = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
   print(repo)
   assert repo == 'sonarsource-private-qa'
 
 def test_promote():
   project="sonar-dummy"
-  buildnumber="316"
-  status = promote(project, buildnumber, "false")  
+  buildnumber="359"
+  status = promote(project, buildnumber)  
   assert status == 'status:release'
 
 def test_promote_multi():
   project="slang-enterprise"
   buildnumber="883"
-  status = promote(project, buildnumber, True)  
+  status = promote(project, buildnumber)  
   assert status == 'status:release'
 
 def test_promote_fail():
   project="sonar-dummy"
   buildnumber="123"
   try:
-    promote(project, buildnumber, "false")  
+    promote(project, buildnumber)  
   except Exception as e:
     print(f"Could not get repository for {project} {buildnumber} {str(e)}")
     assert 'unknown build' == str(e)
@@ -39,7 +38,7 @@ def test_promote_fail():
 
 def test_get_artifacts_to_publish():
   project="sonar-dummy"
-  buildnumber="316"
+  buildnumber="359"
   artifacts = get_artifacts_to_publish(project,buildnumber)
   assert artifacts == 'com.sonarsource.dummy:sonar-dummy-plugin:jar'
 
@@ -61,10 +60,6 @@ def test_get_version():
   buildnumber="20657"
   version = get_version(project,buildnumber)
   print(version)
-  
-def test_find_buildnumber_from_sha1():
-  assert find_buildnumber_from_sha1("master", "3629c526389c15049fc5ca37de395746ade2991b") == "335"
-
 
 def test_upload_to_binaries():
   upload_to_binaries('sonarsource-public-releases','org.sonarsource.java','sonar-java-plugin','','jar','6.0.2.20657')
@@ -86,5 +81,5 @@ def test_is_multi():
 
 def test_is_multi_not():
   project="sonar-dummy"
-  buildnumber="333"  
+  buildnumber="359"  
   assert not is_multi(project,buildnumber)
