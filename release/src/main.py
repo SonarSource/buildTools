@@ -262,8 +262,11 @@ def distribute_build(project,buildnumber):
   }
   url=f"{artifactory_url}/api/build/distribute/{project}/{buildnumber}"
   headers = {'content-type': 'application/json', 'X-JFrog-Art-Api': artifactory_apikey}
-  r = requests.post(url, json=payload, headers=headers)      
-  if r.status_code == 200:      
-    print(f"{project}#{buildnumber} pushed to bintray ready to sync to central")
-  else:
-    print(f"Failed to distribute {project}#{buildnumber}")
+  try:
+    r = requests.post(url, json=payload, headers=headers)  
+    r.raise_for_status()    
+    if r.status_code == 200:      
+      print(f"{project}#{buildnumber} pushed to bintray ready to sync to central")
+  except requests.exceptions.HTTPError as err:
+    print(f"Failed to distribute {project}#{buildnumber} {err}")
+    

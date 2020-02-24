@@ -98,3 +98,8 @@ def test_distribute_build():
   project="sonar-dummy-oss"
   buildnumber="23"  
   distribute_build(project, buildnumber)  
+
+def test_distribute_build_fail():
+  project="sonar-dummy"
+  buildnumber="359"  
+  distribute_build(project, buildnumber)    
