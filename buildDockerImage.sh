@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-TAG=v3
+TAG=v4
 
 docker pull gcr.io/language-team/base:$TAG || true
 docker build -f languageTeam.Dockerfile -t base .
