@@ -4,7 +4,7 @@ from main import promote
 from main import publish_all_artifacts, publish_artifact
 from main import upload_to_binaries
 from main import github_auth
-from main import is_multi,check_public
+from main import is_multi,check_public,distribute_build
 
 def test_repox_get_property_from_buildinfo():
   project="sonar-dummy"
@@ -93,3 +93,8 @@ def test_check_public():
   project="sonar-dummy-oss"
   buildnumber="23"  
   assert check_public(project, buildnumber)  
+
+def test_distribute_build():
+  project="sonar-dummy-oss"
+  buildnumber="23"  
+  distribute_build(project, buildnumber)  
