@@ -29,6 +29,7 @@ ssh_key='id_rsa_ssuopsa'
 AUTHENTICATED="authenticated"
 OSS_REPO="Distribution"
 COMMERCIAL_REPO="CommercialDistribution"
+bintray_target_repo="SonarQube-bintray"
 
   
 # [START functions_promote_http]
@@ -54,8 +55,10 @@ def release(request):
   if validate_authorization_header(request, project) == AUTHENTICATED:
     try:
       promote(project,buildnumber)
-      publish_all_artifacts(project,buildnumber)
+      publish_all_artifacts(project,buildnumber)      
       notify_burgr(org,project,buildnumber,branch,sha1,'passed')
+      if check_public(project,buildnumber):
+        distribute_build(project,buildnumber)
     except Exception as e:
       notify_burgr(org,project,buildnumber,branch,sha1,'failed')
       print(f"Could not get repository for {project} {buildnumber} {str(e)}")
@@ -247,3 +250,24 @@ def notify_burgr(org,project,buildnumber,branch,sha1,status):
   r = requests.post(url, json=payload, auth=HTTPBasicAuth(burgrx_user, burgrx_password)) 
   if r.status_code != 201:          
     print(f"burgr notification failed code:{r.status_code}" )   
+
+def check_public(project,buildnumber):
+  artifacts = get_artifacts_to_publish(project,buildnumber)
+  return "org.sonarsource" in artifacts
+
+def distribute_build(project,buildnumber):
+  payload={ 
+    "targetRepo": bintray_target_repo, 
+    "sourceRepos" : ["sonarsource-public-releases"]  
+  }
+  url=f"{artifactory_url}/api/build/distribute/{project}/{buildnumber}"
+  headers = {'content-type': 'application/json', 'X-JFrog-Art-Api': artifactory_apikey}
+  try:
+    r = requests.post(url, json=payload, headers=headers)  
+    r.raise_for_status()    
+    if r.status_code == 200:      
+      print(f"{project}#{buildnumber} pushed to bintray ready to sync to central")
+  except requests.exceptions.HTTPError as err:
+    print(f"Failed to distribute {project}#{buildnumber} {err}")
+    
+    
