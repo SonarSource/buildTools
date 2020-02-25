@@ -94,12 +94,18 @@ def test_check_public():
   buildnumber="23"  
   assert check_public(project, buildnumber)  
 
-def test_distribute_build():
+def test_distribute_build(capsys):
   project="sonar-dummy-oss"
-  buildnumber="23"  
+  buildnumber="1386"  
   distribute_build(project, buildnumber)  
+  captured = capsys.readouterr()
+  print(captured)
+  assert "pushed to bintray" in captured.out
 
-def test_distribute_build_fail():
+def test_distribute_build_fail(capsys):
   project="sonar-dummy"
   buildnumber="359"  
   distribute_build(project, buildnumber)    
+  captured = capsys.readouterr()
+  print(captured)
+  assert "Failed to distribute sonar-dummy" in captured.out 
