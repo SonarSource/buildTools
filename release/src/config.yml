@@ -25,9 +25,12 @@ run_task:
     <<: *CONTAINER_DEFINITION
     cpu: 2
     memory: 2G
+  env:
+    SLUG: "GITHUB_SLUG"
+    VERSION: "PROJECT_VERSION"
   build_script:
     - curl -o rulescov.jar --silent --user ${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD} "${ARTIFACTORY_URL}/sonarsource-private-releases/com/sonarsource/rulescov/rulescov/\[RELEASE\]/rulescov-\[RELEASE\]-jar-with-dependencies.jar"
     - java --version
-    - java -jar rulescov.jar --github-slug SonarSource/sonar-security --version 8.2.0-M1.869 --github-token ${GITHUB_TOKEN} --jira-root-url https://jira.sonarsource.com --jira-username sonartech --jira-password ${SONARTECH_JIRA_PASSWORD} --working-directory ${CIRRUS_WORKING_DIR} --dry-run
+    - java -jar rulescov.jar --github-slug ${SLUG} --version ${VERSION} --github-token ${GITHUB_TOKEN} --jira-root-url https://jira.sonarsource.com --jira-username sonartech --jira-password ${SONARTECH_JIRA_PASSWORD} --working-directory ${CIRRUS_WORKING_DIR} --dry-run
 
   
