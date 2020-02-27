@@ -5,7 +5,7 @@ set -euo pipefail
 TAG=v4
 
 docker pull gcr.io/language-team/base:$TAG || true
-docker build -f languageTeam.Dockerfile -t base .
+docker build -f Dockerfile-base -t base .
 
 if [ "${CIRRUS_PR:-}" != "" ]; then
   TAG=$CIRRUS_PR
