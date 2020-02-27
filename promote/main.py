@@ -18,6 +18,7 @@ def repoxGetPropertyFromBuildInfo(project, buildNumber, property):
   if r.status_code == 200:      
     return buildInfo['buildInfo']['properties'][property]
   else:
+    print(f'repoxGetPropertyFromBuildInfo call with URL {url} failed, the response is {buildInfo}')
     raise Exception('unknown build')
 
 def validateAutorizationHeader(request):
