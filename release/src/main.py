@@ -4,6 +4,7 @@ import requests
 import json
 import urllib.request
 import paramiko
+import yaml
 from scp import SCPClient
 from flask import escape
 from flask import make_response
@@ -21,6 +22,12 @@ burgrx_url = 'https://burgrx.sonarsource.com'
 burgrx_user = os.environ.get('BURGRX_USER', 'no burgrx user in env')
 burgrx_password = os.environ.get('BURGRX_PASSWORD', 'no burgrx password in env')
 
+#rules-cov
+cirrus_token=os.environ.get('CIRRUS_TOKEN','no cirrus token in env')  
+cirrus_api_url="https://api.cirrus-ci.com/graphql"
+owner="SonarSource"
+
+#repox
 artifactory_url='https://repox.jfrog.io/repox'
 binaries_host='binaries.sonarsource.com'
 binaries_url=f"https://{binaries_host}"
@@ -59,6 +66,7 @@ def release(request):
       notify_burgr(org,project,buildnumber,branch,sha1,'passed')
       if check_public(project,buildnumber):
         distribute_build(project,buildnumber)
+      rules_cov(project,buildnumber)
     except Exception as e:
       notify_burgr(org,project,buildnumber,branch,sha1,'failed')
       print(f"Could not get repository for {project} {buildnumber} {str(e)}")
@@ -271,3 +279,56 @@ def distribute_build(project,buildnumber):
     print(f"Failed to distribute {project}#{buildnumber} {err}")
     
     
+def get_cirrus_repository_id(project):
+  url = cirrus_api_url
+  headers = {'Authorization': f"Bearer {cirrus_token}"}
+  payload = {
+    "query":f"query GitHubRepositoryQuery {{githubRepository(owner:\"{owner}\",name:\"{project}\"){{id}}}}"
+    }
+  try:
+    r = requests.post(url, json=payload, headers=headers)
+    r.raise_for_status()    
+    repository_id=r.json()["data"]["githubRepository"]["id"]    
+    if r.status_code == 200:      
+      print(f"Found cirrus repository_id for {project}:{repository_id}")
+    return repository_id
+  except requests.exceptions.HTTPError as err:
+    error=f"Failed to get repository id for {project} {err}"
+    print(error)
+    raise Exception(error)
+
+def rules_cov(project,buildnumber):
+  rulescov_repos="rules-cov"
+  repository_id=get_cirrus_repository_id(rulescov_repos)
+  version=get_version(project,buildnumber)
+  f = open("config.yml","r")
+  config = f.read()
+  data = yaml.safe_load(config)
+  data['run_task']['env'].update(dict(SLUG=f"{owner}/{project}", VERSION=version))
+  config = yaml.dump(data)  
+  url = cirrus_api_url
+  headers = {'Authorization': f"Bearer {cirrus_token}"}
+  payload = {
+    "query": f"mutation CreateBuildDialogMutation($input: RepositoryCreateBuildInput!) {{createBuild(input: $input) {{build {{id}}}}}}",
+    "variables": {
+      "input": {
+        "clientMutationId": f"{rulescov_repos}",
+        "repositoryId": f"{repository_id}",
+        "branch": "run",
+        "sha": "",
+        "configOverride": f"{config}"
+        }
+      }
+    }
+  error=f"Failed to trigger rules-cov for {project}#{buildnumber}"
+  try:
+    r = requests.post(url, json=payload, headers=headers)    
+    r.raise_for_status()       
+    if r.status_code == 200:      
+      if 'errors' in r.json():
+        raise Exception(error)    
+      else:
+        print(f"Triggered rules-cov on cirrus for {project}#{version}")
+  except requests.exceptions.HTTPError as err:    
+    print(error)
+    raise Exception(f"{error} {err}")

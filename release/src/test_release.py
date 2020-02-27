@@ -5,6 +5,7 @@ from main import publish_all_artifacts, publish_artifact
 from main import upload_to_binaries
 from main import github_auth
 from main import is_multi,check_public,distribute_build
+from main import get_cirrus_repository_id,rules_cov
 
 def test_repox_get_property_from_buildinfo():
   project="sonar-dummy"
@@ -109,3 +110,11 @@ def test_distribute_build_fail(capsys):
   captured = capsys.readouterr()
   print(captured)
   assert "Failed to distribute sonar-dummy" in captured.out 
+
+def test_get_cirrus_repository_id():
+  assert get_cirrus_repository_id("sonar-security") == '5219385735643136'
+
+def test_rules_cov():
+  project="sonar-security"
+  buildnumber="1259"  
+  rules_cov(project,buildnumber)
