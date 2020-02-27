@@ -69,6 +69,7 @@ def promote(request):
     try:
       repo = repoxGetPropertyFromBuildInfo(project, buildNumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
     except Exception as e:
+      print(str(e))
       return make_response(str(e),400)
 
     if pullRequest != "false":
