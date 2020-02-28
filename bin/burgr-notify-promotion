@@ -35,8 +35,8 @@ function createArtifactURL() {
   FILENAME=$ARTIFACT_ID-$PROJECT_VERSION
   EXTENSION=
   if [ ${#GAQE[@]} = 4 ];then
-    CLASSIFIER=${GAQE[2]}
-    EXTENSION=${GAQE[3]}
+    CLASSIFIER=${GAQE[3]}
+    EXTENSION=${GAQE[2]}
     FILENAME=$FILENAME-$CLASSIFIER
   else
     EXTENSION=${GAQE[2]}
