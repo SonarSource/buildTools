@@ -264,6 +264,7 @@ def check_public(project,buildnumber):
   return "org.sonarsource" in artifacts
 
 def distribute_build(project,buildnumber):
+  print(f"Distributing {project}#{buildnumber} to bintray")
   payload={ 
     "targetRepo": bintray_target_repo, 
     "sourceRepos" : ["sonarsource-public-releases"]  
@@ -298,6 +299,7 @@ def get_cirrus_repository_id(project):
     raise Exception(error)
 
 def rules_cov(project,buildnumber):
+  print(f"Triggering rules-cov for {project}#{buildnumber}")  
   rulescov_repos="rules-cov"
   repository_id=get_cirrus_repository_id(rulescov_repos)
   version=get_version(project,buildnumber)
