@@ -237,6 +237,8 @@ def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
   release_url = f"{binaries_url}/{binaries_repo}/{aid}/{aid}-{version}.{ext}" 
   return release_url
 
+# This will only work for a branch build, not a PR build
+# because a PR build notification needs `"pr_number": NUMBER` instead of `'branch': NAME`
 def notify_burgr(org,project,buildnumber,branch,sha1,status):  
   payload={
     'repository': f"{org}/{project}",
