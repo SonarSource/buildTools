@@ -251,7 +251,7 @@ def notify_burgr(org,project,buildnumber,branch,sha1,status):
     'status': status,
     'metadata': '',
     'started_at':datetime.now(timezone.utc).astimezone().isoformat(),
-    'fnished_at':datetime.now(timezone.utc).astimezone().isoformat()
+    'finished_at':datetime.now(timezone.utc).astimezone().isoformat()
   }
   print(f"burgr payload:{payload}")
   url=f"{burgrx_url}/api/stage"
