@@ -1,65 +1,55 @@
-import os
-from main import repox_get_property_from_buildinfo, repox_get_module_property_from_buildinfo, get_artifacts_to_publish, get_version
-from main import promote
-from main import publish_all_artifacts, publish_artifact
-from main import upload_to_binaries
-from main import github_auth
-from main import is_multi,check_public,distribute_build
-from main import get_cirrus_repository_id,rules_cov
+from main import *
+
+sonar_dummy_request = ReleaseRequest('SonarSource', 'sonar-dummy', '379')
+sonar_dummy_build_info = repox_get_build_info(sonar_dummy_request)
+
+sonar_dummy_oss_request = ReleaseRequest('SonarSource', 'sonar-dummy-oss', '1386')
+sonar_dummy_oss_build_info = repox_get_build_info(sonar_dummy_oss_request)
+
+slang_enterprise_request = ReleaseRequest('SonarSource', 'slang-enterprise', '883')
+slang_enterprise_build_info = repox_get_build_info(slang_enterprise_request)
+
+sonar_security_request = ReleaseRequest('SonarSource', 'sonar-security', '1259')
+sonar_security_build_info = repox_get_build_info(sonar_security_request)
 
 def test_repox_get_property_from_buildinfo():
-  project="sonar-dummy"
-  buildnumber="359"
-  repo = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
+  repo = repox_get_property_from_buildinfo(sonar_dummy_build_info, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
   print(repo)
   assert repo == 'sonarsource-private-qa'
 
 def test_promote():
-  project="sonar-dummy"
-  buildnumber="359"
-  status = promote(project, buildnumber)  
+  status = promote(sonar_dummy_request, sonar_dummy_build_info)
   assert status == 'status:release'
 
 def test_promote_multi():
-  project="slang-enterprise"
-  buildnumber="883"
-  status = promote(project, buildnumber)  
+  status = promote(slang_enterprise_request, slang_enterprise_build_info)
   assert status == 'status:release'
 
 def test_promote_fail():
-  project="sonar-dummy"
-  buildnumber="123"
+  request = ReleaseRequest('SonarSource', 'sonar-dummy', '359')
   try:
-    promote(project, buildnumber)  
+    promote(request, repox_get_build_info(request))
   except Exception as e:
-    print(f"Could not get repository for {project} {buildnumber} {str(e)}")
+    print(f"Could not get repository for {request.project} {request.buildnumber} {str(e)}")
     assert 'unknown build' == str(e)
-  
 
 
 def test_get_artifacts_to_publish():
-  project="sonar-dummy"
-  buildnumber="359"
-  artifacts = get_artifacts_to_publish(project,buildnumber)
+  artifacts = get_artifacts_to_publish(sonar_dummy_build_info)
   assert artifacts == 'com.sonarsource.dummy:sonar-dummy-plugin:jar'
 
 def test_get_artifacts_to_publish_se():
-  project="slang-enterprise"
-  buildnumber="883"
-  artifacts = get_artifacts_to_publish(project,buildnumber)
+  artifacts = get_artifacts_to_publish(slang_enterprise_build_info)
   print(f"artifacts: {artifacts}")
-  #assert artifacts == 'com.sonarsource.dummy:sonar-dummy-plugin:jar'  
 
 def test_publish_all_artifacts():
-  print(publish_all_artifacts('sonar-dummy','344'))
+  print(publish_all_artifacts(sonar_dummy_request, sonar_dummy_build_info))
 
 def test_publish_all_artifacts_multi():
-  print(publish_all_artifacts('slang-enterprise','883'))
+  print(publish_all_artifacts(slang_enterprise_request, slang_enterprise_build_info))
 
 def test_get_version():
-  project="sonar-java"
-  buildnumber="20657"
-  version = get_version(project,buildnumber)
+  version = get_version(repox_get_build_info(ReleaseRequest('SonarSource', 'sonar-java', '20657')))
   print(version)
 
 def test_upload_to_binaries():
@@ -76,24 +66,16 @@ def test_github_auth_fail():
   assert (github_auth(token,project) != True)
 
 def test_is_multi():
-  project="slang-enterprise"
-  buildnumber="883"  
-  assert is_multi(project,buildnumber)
+  assert is_multi(slang_enterprise_build_info)
 
 def test_is_multi_not():
-  project="sonar-dummy"
-  buildnumber="359"  
-  assert not is_multi(project,buildnumber)
+  assert not is_multi(sonar_dummy_build_info)
 
 def test_check_public_not():
-  project="sonar-dummy"
-  buildnumber="359"  
-  assert not check_public(project, buildnumber)
+  assert not check_public(sonar_dummy_build_info)
 
 def test_check_public():
-  project="sonar-dummy-oss"
-  buildnumber="23"  
-  assert check_public(project, buildnumber)  
+  assert check_public(sonar_dummy_oss_build_info)
 
 def test_distribute_build(capsys):
   project="sonar-dummy-oss"
@@ -115,6 +97,4 @@ def test_get_cirrus_repository_id():
   assert get_cirrus_repository_id("sonar-security") == '5219385735643136'
 
 def test_rules_cov():
-  project="sonar-security"
-  buildnumber="1259"  
-  rules_cov(project,buildnumber)
+  rules_cov(sonar_security_request,sonar_security_build_info)

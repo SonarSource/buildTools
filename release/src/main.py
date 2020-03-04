@@ -1,4 +1,3 @@
-import sys
 import os
 import requests
 import json
@@ -6,14 +5,12 @@ import urllib.request
 import paramiko
 import yaml
 from scp import SCPClient
-from flask import escape
 from flask import make_response
 from datetime import datetime, timezone
 from requests.auth import HTTPBasicAuth
-from requests.models import Response
 
-artifactory_apikey=os.environ.get('ARTIFACTORY_API_KEY','no api key in env')  
-passphrase=os.environ.get('GPG_PASSPHRASE','no GPG_PASSPHRASE in env')  
+artifactory_apikey=os.environ.get('ARTIFACTORY_API_KEY','no api key in env')
+passphrase=os.environ.get('GPG_PASSPHRASE','no GPG_PASSPHRASE in env')
 
 binaries_path_prefix=os.environ.get('PATH_PREFIX','/tmp')
 
@@ -23,7 +20,7 @@ burgrx_user = os.environ.get('BURGRX_USER', 'no burgrx user in env')
 burgrx_password = os.environ.get('BURGRX_PASSWORD', 'no burgrx password in env')
 
 #rules-cov
-cirrus_token=os.environ.get('CIRRUS_TOKEN','no cirrus token in env')  
+cirrus_token=os.environ.get('CIRRUS_TOKEN','no cirrus token in env')
 cirrus_api_url="https://api.cirrus-ci.com/graphql"
 owner="SonarSource"
 
@@ -38,7 +35,15 @@ OSS_REPO="Distribution"
 COMMERCIAL_REPO="CommercialDistribution"
 bintray_target_repo="SonarQube-bintray"
 
-  
+
+content_type_json='application/json'
+
+class ReleaseRequest:
+  def __init__(self, org, project, buildnumber):
+    self.org = org
+    self.project= project
+    self.buildnumber = buildnumber
+
 # [START functions_promote_http]
 def release(request):
   """HTTP Cloud Function.
@@ -53,20 +58,19 @@ def release(request):
     {functionBaseUrl}/promote/GITHUB_ORG/GITHUB_PROJECT/BUILD_NUMBER
   """
   print("PATH:"+request.path)
-  paths=request.path.split("/")
-  org=paths[1]
-  project=paths[2]
-  buildnumber=paths[3]
-  branch=repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.GITHUB_BRANCH')
-  sha1=repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.GIT_SHA1')
+  _, org, project, buildnumber = request.path.split("/")
+  release_request = ReleaseRequest(org, project, buildnumber)
+  buildinfo=repox_get_build_info(release_request)
+  branch=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GITHUB_BRANCH')
+  sha1=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GIT_SHA1')
   if validate_authorization_header(request, project) == AUTHENTICATED:
     try:
-      promote(project,buildnumber)
-      publish_all_artifacts(project,buildnumber)      
-      if check_public(project,buildnumber):
-        distribute_build(project,buildnumber)
-      rules_cov(project,buildnumber)
+      promote(release_request, buildinfo)
+      publish_all_artifacts(release_request,buildinfo)
       notify_burgr(org,project,buildnumber,branch,sha1,'passed')
+      if check_public(buildinfo):
+        distribute_build(project,buildnumber)
+      rules_cov(release_request,buildinfo)
     except Exception as e:
       notify_burgr(org,project,buildnumber,branch,sha1,'failed')
       print(f"Release failed for {project}#{buildnumber} {str(e)}")
@@ -93,105 +97,104 @@ def validate_authorization_header(request, project):
   else:
     return "Missing access token"
 
-def repox_get_property_from_buildinfo(project, buildnumber, property):  
-  buildinfo = repox_get_build_info(project,buildnumber)
+def repox_get_property_from_buildinfo(buildinfo, property):
   return buildinfo['buildInfo']['properties'][property]
 
-def repox_get_module_property_from_buildinfo(project, buildnumber, property):  
-  buildinfo = repox_get_build_info(project,buildnumber)
+def repox_get_module_property_from_buildinfo(buildinfo, property):
   return buildinfo['buildInfo']['modules'][0]['properties'][property]
 
-def get_version(project, buildnumber):  
-  buildinfo = repox_get_build_info(project,buildnumber)  
+def get_version(buildinfo):
   return buildinfo['buildInfo']['modules'][0]['id'].split(":")[-1]
-  
-def repox_get_build_info(project, buildnumber):  
-  url = f"{artifactory_url}/api/build/{project}/{buildnumber}"
-  headers = {'content-type': 'application/json', 'X-JFrog-Art-Api': artifactory_apikey} 
-  r = requests.get(url, headers=headers)  
+
+def repox_get_build_info(release_request):
+  url = f"{artifactory_url}/api/build/{release_request.project}/{release_request.buildnumber}"
+  headers = {'content-type': content_type_json, 'X-JFrog-Art-Api': artifactory_apikey}
+  r = requests.get(url, headers=headers)
   buildinfo = r.json()
-  if r.status_code == 200:      
+  if r.status_code == 200:
     return buildinfo
   else:
-    raise Exception('unknown build')  
+    print(r.status_code)
+    print(r.content)
+    raise Exception('unknown build')
 
-def get_artifacts_to_publish(project,buildnumber):
+def get_artifacts_to_publish(buildinfo):
   artifacts = ''
-  try:  
-    artifacts = repox_get_module_property_from_buildinfo(project, buildnumber,'artifactsToPublish')
+  try:
+    artifacts = repox_get_module_property_from_buildinfo(buildinfo,'artifactsToPublish')
   except:
-    artifacts = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTS_TO_PUBLISH')
+    artifacts = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTS_TO_PUBLISH')
   return artifacts
 
-def publish_all_artifacts(project,buildnumber): 
-  print(f"publishing artifats for {project}#{buildnumber}")
-  repo = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO').replace('qa', 'builds')
-  version=get_version(project,buildnumber)
-  allartifacts=get_artifacts_to_publish(project,buildnumber) 
+def publish_all_artifacts(release_request,buildinfo):
+  print(f"publishing artifats for {release_request.project}#{release_request.buildnumber}")
+  repo = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO').replace('qa', 'builds')
+  version=get_version(buildinfo)
+  allartifacts=get_artifacts_to_publish(buildinfo)
   artifacts = allartifacts.split(",")
-  artifacts_count = len(artifacts)   
+  artifacts_count = len(artifacts)
   if artifacts_count == 1:
     print("only 1")
-    return publish_artifact(artifacts[0],version,repo)  
+    return publish_artifact(artifacts[0],version,repo)
   release_url = ""
   print(f"{artifacts_count} artifacts")
-  for i in range(0, artifacts_count):      
-    print(f"artifact {i}")  
-    release_url = publish_artifact(artifacts[i - 1],version,repo)  
+  for i in range(0, artifacts_count):
+    print(f"artifact {i}")
+    release_url = publish_artifact(artifacts[i - 1],version,repo)
   return release_url
 
 
-def publish_artifact(artifact_to_publish,version,repo): 
+def publish_artifact(artifact_to_publish,version,repo):
   print(f"publishing {artifact_to_publish}#{version}")
   artifact = artifact_to_publish.split(":")
   gid = artifact[0]
   aid = artifact[1]
   ext = artifact[2]
   qual = ''
-  artifactory_repo = repo.replace('builds', 'releases')    
-  print(f"{gid} {aid} {ext}")  
+  artifactory_repo = repo.replace('builds', 'releases')
+  print(f"{gid} {aid} {ext}")
   return upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version)
 
-def is_multi(project,buildnumber):
-  allartifacts=get_artifacts_to_publish(project,buildnumber) 
+def is_multi(buildinfo):
+  allartifacts=get_artifacts_to_publish(buildinfo)
   artifacts = allartifacts.split(",")
-  artifacts_count = len(artifacts)   
+  artifacts_count = len(artifacts)
   if artifacts_count == 1:
     return False
-  ref=artifacts[0][0:3]  
-  for i in range(0, artifacts_count):      
+  ref=artifacts[0][0:3]
+  for i in range(0, artifacts_count):
     current=artifacts[i - 1][0:3]
     if current != ref:
       return True
   return False
 
 
-def promote(project,buildnumber):
+def promote(release_request,buildinfo):
   targetrepo="sonarsource-public-releases"
   status='release'
-  
-  repo = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
+
+  repo = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
   targetrepo = repo.replace('qa', 'releases')
-  
-  print(f"Promoting build {project}#{buildnumber} to {targetrepo}")
+
+  print(f"Promoting build {release_request.project}#{release_request.buildnumber} to {targetrepo}")
   json_payload={
       "status": f"{status}",
       "targetRepo": f"{targetrepo}"
   }
 
-  if is_multi(project, buildnumber):
+  if is_multi(buildinfo):
     print(f"Promoting multi repositories")
-    url = f"{artifactory_url}/api/plugins/execute/multiRepoPromote?params=buildName={project};buildNumber={buildnumber};src1=sonarsource-private-builds;target1=sonarsource-private-releases;src2=sonarsource-public-builds;target2=sonarsource-public-releases;status={status}"
+    url = f"{artifactory_url}/api/plugins/execute/multiRepoPromote?params=buildName={release_request.project};buildNumber={release_request.buildnumber};src1=sonarsource-private-builds;target1=sonarsource-private-releases;src2=sonarsource-public-builds;target2=sonarsource-public-releases;status={status}"
     headers = {'X-JFrog-Art-Api': artifactory_apikey}
     r = requests.get(url, headers=headers)
   else:
-    url = f"{artifactory_url}/api/build/promote/{project}/{buildnumber}"
-    headers = {'content-type': 'application/json', 'X-JFrog-Art-Api': artifactory_apikey}
-    r = requests.post(url, data=json.dumps(json_payload), headers=headers)      
-  if r.status_code == 200:      
+    url = f"{artifactory_url}/api/build/promote/{release_request.project}/{release_request.buildnumber}"
+    headers = {'content-type': content_type_json, 'X-JFrog-Art-Api': artifactory_apikey}
+    r = requests.post(url, data=json.dumps(json_payload), headers=headers)
+  if r.status_code == 200:
     return f"status:{status}"
   else:
-    return f"status:{status} code:{r.status_code}"   
+    return f"status:{status} code:{r.status_code}"
 
 
 def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
@@ -202,11 +205,11 @@ def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
     artifactory_repo=artifactory_repo.replace('public', 'private')
     binaries_repo=COMMERCIAL_REPO
   artifactory=artifactory_url+"/"+artifactory_repo
-  
+
   filename=f"{aid}-{version}.{ext}"
   if qual:
     filename=f"{aid}-{version}-{qual}.{ext}"
-  url=f"{artifactory}/{gid_path}/{aid}/{version}/{filename}"    
+  url=f"{artifactory}/{gid_path}/{aid}/{version}/{filename}"
   print(url)
   opener = urllib.request.build_opener()
   opener.addheaders = [('X-JFrog-Art-Api', artifactory_apikey)]
@@ -234,12 +237,12 @@ def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
   stdin,stdout,stderr=ssh_client.exec_command(f"ls -al {directory}")
   print(stdout.readlines())
   ssh_client.close()
-  release_url = f"{binaries_url}/{binaries_repo}/{aid}/{aid}-{version}.{ext}" 
+  release_url = f"{binaries_url}/{binaries_repo}/{aid}/{aid}-{version}.{ext}"
   return release_url
 
 # This will only work for a branch build, not a PR build
 # because a PR build notification needs `"pr_number": NUMBER` instead of `'branch': NAME`
-def notify_burgr(org,project,buildnumber,branch,sha1,status):  
+def notify_burgr(org,project,buildnumber,branch,sha1,status):
   payload={
     'repository': f"{org}/{project}",
     'pipeline': buildnumber,
@@ -257,31 +260,31 @@ def notify_burgr(org,project,buildnumber,branch,sha1,status):
   }
   print(f"burgr payload:{payload}")
   url=f"{burgrx_url}/api/stage"
-  r = requests.post(url, json=payload, auth=HTTPBasicAuth(burgrx_user, burgrx_password)) 
-  if r.status_code != 201:          
-    print(f"burgr notification failed code:{r.status_code}" )   
+  r = requests.post(url, json=payload, auth=HTTPBasicAuth(burgrx_user, burgrx_password))
+  if r.status_code != 201:
+    print(f"burgr notification failed code:{r.status_code}" )
 
-def check_public(project,buildnumber):
-  artifacts = get_artifacts_to_publish(project,buildnumber)
+def check_public(buildinfo):
+  artifacts = get_artifacts_to_publish(buildinfo)
   return "org.sonarsource" in artifacts
 
 def distribute_build(project,buildnumber):
   print(f"Distributing {project}#{buildnumber} to bintray")
-  payload={ 
-    "targetRepo": bintray_target_repo, 
-    "sourceRepos" : ["sonarsource-public-releases"]  
+  payload={
+    "targetRepo": bintray_target_repo,
+    "sourceRepos" : ["sonarsource-public-releases"]
   }
   url=f"{artifactory_url}/api/build/distribute/{project}/{buildnumber}"
-  headers = {'content-type': 'application/json', 'X-JFrog-Art-Api': artifactory_apikey}
+  headers = {'content-type': content_type_json, 'X-JFrog-Art-Api': artifactory_apikey}
   try:
-    r = requests.post(url, json=payload, headers=headers)  
-    r.raise_for_status()    
-    if r.status_code == 200:      
+    r = requests.post(url, json=payload, headers=headers)
+    r.raise_for_status()
+    if r.status_code == 200:
       print(f"{project}#{buildnumber} pushed to bintray ready to sync to central")
   except requests.exceptions.HTTPError as err:
     print(f"Failed to distribute {project}#{buildnumber} {err}")
-    
-    
+
+
 def get_cirrus_repository_id(project):
   url = cirrus_api_url
   headers = {'Authorization': f"Bearer {cirrus_token}"}
@@ -290,10 +293,8 @@ def get_cirrus_repository_id(project):
     }
   try:
     r = requests.post(url, json=payload, headers=headers)
-    r.raise_for_status()    
-    print(r.json())
-        
-    if r.status_code == 200:      
+    r.raise_for_status()
+    if r.status_code == 200:
       repository_id=r.json()["data"]["githubRepository"]["id"]
       print(f"Found cirrus repository_id for {project}:{repository_id}")
       return repository_id
@@ -304,16 +305,16 @@ def get_cirrus_repository_id(project):
     print(error)
     raise Exception(error)
 
-def rules_cov(project,buildnumber):
-  print(f"Triggering rules-cov for {project}#{buildnumber}")  
+def rules_cov(release_request,buildinfo):
+  print(f"Triggering rules-cov for {release_request.project}#{release_request.buildnumber}")
   rulescov_repos="rules-cov"
   repository_id=get_cirrus_repository_id(rulescov_repos)
-  version=get_version(project,buildnumber)
+  version=get_version(buildinfo)
   f = open("config.yml","r")
   config = f.read()
   data = yaml.safe_load(config)
-  data['run_task']['env'].update(dict(SLUG=f"{owner}/{project}", VERSION=version))
-  config = yaml.dump(data)  
+  data['run_task']['env'].update(dict(SLUG=f"{owner}/{release_request.project}", VERSION=version))
+  config = yaml.dump(data)
   url = cirrus_api_url
   headers = {'Authorization': f"Bearer {cirrus_token}"}
   payload = {
@@ -328,15 +329,15 @@ def rules_cov(project,buildnumber):
         }
       }
     }
-  error=f"Failed to trigger rules-cov for {project}#{buildnumber}"
+  error=f"Failed to trigger rules-cov for {release_request.project}#{release_request.buildnumber}"
   try:
-    r = requests.post(url, json=payload, headers=headers)    
-    r.raise_for_status()       
-    if r.status_code == 200:      
+    r = requests.post(url, json=payload, headers=headers)
+    r.raise_for_status()
+    if r.status_code == 200:
       if 'errors' in r.json():
-        raise Exception(error)    
+        raise Exception(error)
       else:
-        print(f"Triggered rules-cov on cirrus for {project}#{version}")
-  except Exception as err:    
+        print(f"Triggered rules-cov on cirrus for {release_request.project}#{version}")
+  except Exception as err:
     print(error)
     raise Exception(f"{error} {err}")
