@@ -41,8 +41,11 @@ content_type_json='application/json'
 class ReleaseRequest:
   def __init__(self, org, project, buildnumber):
     self.org = org
-    self.project= project
+    self.project = project
     self.buildnumber = buildnumber
+
+  def is_sonarlint(self):
+    return self.project.startswith('sonarlint-')
 
 # [START functions_promote_http]
 def release(request):
@@ -63,20 +66,22 @@ def release(request):
   buildinfo=repox_get_build_info(release_request)
   branch=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GITHUB_BRANCH')
   sha1=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GIT_SHA1')
-  if validate_authorization_header(request, project) == AUTHENTICATED:
+  authorization_result = validate_authorization_header(request, project)
+  if authorization_result == AUTHENTICATED:
     try:
       promote(release_request, buildinfo)
       publish_all_artifacts(release_request,buildinfo)
-      notify_burgr(org,project,buildnumber,branch,sha1,'passed')
-      if check_public(buildinfo):
-        distribute_build(project,buildnumber)
-      rules_cov(release_request,buildinfo)
+      notify_burgr(release_request,branch,sha1,'passed')
+      if not release_request.is_sonarlint():
+        if check_public(buildinfo):
+          distribute_build(project,buildnumber)
+        rules_cov(release_request,buildinfo)
     except Exception as e:
-      notify_burgr(org,project,buildnumber,branch,sha1,'failed')
-      print(f"Release failed for {project}#{buildnumber} {str(e)}")
+      notify_burgr(release_request,branch,sha1,'failed')
+      print(f"Could not get repository for {project} {buildnumber} {str(e)}")
       return make_response(str(e),500)
   else:
-    return make_response(validate_authorization_header(request, project), 403)
+    return make_response(authorization_result, 403)
 
 def github_auth(token,project):
   url = f"https://api.github.com/repos/SonarSource/{project}"
@@ -242,17 +247,17 @@ def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
 
 # This will only work for a branch build, not a PR build
 # because a PR build notification needs `"pr_number": NUMBER` instead of `'branch': NAME`
-def notify_burgr(org,project,buildnumber,branch,sha1,status):
+def notify_burgr(release_request,branch,sha1,status):
   payload={
-    'repository': f"{org}/{project}",
-    'pipeline': buildnumber,
+    'repository': f"{release_request.org}/{release_request.project}",
+    'pipeline': release_request.buildnumber,
     'name': 'RELEASE',
     'system': 'github',
     'type': 'release',
-    'number': buildnumber,
+    'number': release_request.buildnumber,
     'branch': branch,
     'sha1': sha1,
-    'url':f"https://github.com/{org}/{project}/releases",
+    'url':f"https://github.com/{release_request.org}/{release_request.project}/releases",
     'status': status,
     'metadata': '',
     'started_at':datetime.now(timezone.utc).astimezone().isoformat(),

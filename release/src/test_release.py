@@ -12,6 +12,12 @@ slang_enterprise_build_info = repox_get_build_info(slang_enterprise_request)
 sonar_security_request = ReleaseRequest('SonarSource', 'sonar-security', '1259')
 sonar_security_build_info = repox_get_build_info(sonar_security_request)
 
+def test_request_is_sonarlint():
+  assert ReleaseRequest('SonarSource', 'sonarlint-core', '12345').is_sonarlint()
+
+def test_request_is_not_sonarlint():
+  assert not ReleaseRequest('SonarSource', 'sonar-java', '23456').is_sonarlint()
+
 def test_repox_get_property_from_buildinfo():
   repo = repox_get_property_from_buildinfo(sonar_dummy_build_info, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
   print(repo)
