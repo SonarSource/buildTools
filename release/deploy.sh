@@ -10,5 +10,6 @@ gcloud functions deploy release \
   --set-env-vars ARTIFACTORY_API_KEY=$ARTIFACTORY_API_KEY,GPG_PASSPHRASE=$GPG_PASSPHRASE,PATH_PREFIX=$PATH_PREFIX,BURGRX_USER=$BURGRX_USER,BURGRX_PASSWORD=$BURGRX_PASSWORD,CIRRUS_TOKEN=$CIRRUS_TOKEN \
   --region us-central1 \
   --memory 128MB \
+  --timeout 360 \
   --project $GOOGLE_PROJECT_ID \
   --source src

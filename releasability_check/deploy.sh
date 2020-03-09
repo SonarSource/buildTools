@@ -8,5 +8,6 @@ gcloud functions deploy releasability_check \
   --set-env-vars BURGRX_USER=$BURGRX_USER,BURGRX_PASSWORD=$BURGRX_PASSWORD \
   --region us-central1 \
   --memory 128MB \
+  --timeout 360 \
   --project $GOOGLE_PROJECT_ID \
   --source=src
