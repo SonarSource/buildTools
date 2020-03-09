@@ -63,13 +63,13 @@ def release(request):
     try:
       promote(project,buildnumber)
       publish_all_artifacts(project,buildnumber)      
-      notify_burgr(org,project,buildnumber,branch,sha1,'passed')
       if check_public(project,buildnumber):
         distribute_build(project,buildnumber)
       rules_cov(project,buildnumber)
+      notify_burgr(org,project,buildnumber,branch,sha1,'passed')
     except Exception as e:
       notify_burgr(org,project,buildnumber,branch,sha1,'failed')
-      print(f"Could not get repository for {project} {buildnumber} {str(e)}")
+      print(f"Release failed for {project}#{buildnumber} {str(e)}")
       return make_response(str(e),500)
   else:
     return make_response(validate_authorization_header(request, project), 403)
@@ -291,11 +291,15 @@ def get_cirrus_repository_id(project):
   try:
     r = requests.post(url, json=payload, headers=headers)
     r.raise_for_status()    
-    repository_id=r.json()["data"]["githubRepository"]["id"]    
+    print(r.json())
+        
     if r.status_code == 200:      
+      repository_id=r.json()["data"]["githubRepository"]["id"]
       print(f"Found cirrus repository_id for {project}:{repository_id}")
-    return repository_id
-  except requests.exceptions.HTTPError as err:
+      return repository_id
+    else:
+      raise Exception("Invalid return code while retrieving repository id")
+  except Exception as err:
     error=f"Failed to get repository id for {project} {err}"
     print(error)
     raise Exception(error)
@@ -333,6 +337,6 @@ def rules_cov(project,buildnumber):
         raise Exception(error)    
       else:
         print(f"Triggered rules-cov on cirrus for {project}#{version}")
-  except requests.exceptions.HTTPError as err:    
+  except Exception as err:    
     print(error)
     raise Exception(f"{error} {err}")
