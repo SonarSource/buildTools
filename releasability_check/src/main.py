@@ -33,16 +33,17 @@ def releasability_check(request: Request):
     if not paths or len(paths) != 4:
         return make_response("Bad Request", 400)
 
-    organization = paths[1]
-    project = paths[2]
-    version = paths[3]
+    _, organization, project, version = paths
     if organization != "SonarSource":
         return make_response("Unauthorized organization", 403)
+
+    # Read branch from optional ?branch=xxx/yyy/zzz parameter
+    branch = request.args.get('branch', 'master')
 
     try:
         authorization = validate_authorization_header(request.headers, project)
         if authorization == AUTHENTICATED:
-            releasability = releasability_checks(project, version)
+            releasability = releasability_checks(project, version, branch)
             if releasability:
                 return make_response(releasability)
             return make_response("Unexpected error occurred", 500)
@@ -77,7 +78,7 @@ def github_auth(token: str, project: str):
     return False
 
 
-def releasability_checks(project: str, version: str):
+def releasability_checks(project: str, version: str, branch: str):
     r"""Starts the releasability check operation. Post the start releasability HTTP request to Burgrx and polls until
       all checks have completed.
 
@@ -92,7 +93,7 @@ def releasability_checks(project: str, version: str):
     message = response.json().get('message', '')
     if response.status_code == 200 and message == "done":
         print(f"Releasability checks started successfully")
-        return start_polling_releasability_status(project, version)
+        return start_polling_releasability_status(project, version, branch)
     else:
         print(f"Releasability checks failed to start: {response} '{message}'")
         raise Exception(f"Releasability checks failed to start: '{message}'")
@@ -100,6 +101,7 @@ def releasability_checks(project: str, version: str):
 
 def start_polling_releasability_status(project: str,
                                        version: str,
+                                       branch: str,
                                        step: int = 4,
                                        timeout: int = 300,
                                        check_releasable: bool = True):
@@ -114,7 +116,6 @@ def start_polling_releasability_status(project: str,
       """
 
     url_encoded_project = urllib.parse.quote(f"SonarSource/{project}", safe='')
-    branch = 'master'
     url = f"{burgrx_url}/api/commitPipelinesStages?project={url_encoded_project}&branch={branch}&nbOfCommits=1&startAtCommit=0"
 
     try:
