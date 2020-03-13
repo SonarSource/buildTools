@@ -29,6 +29,19 @@ def distribute_build(project,buildnumber):
   except requests.exceptions.HTTPError as err:
     print(f"Failed to distribute {project}#{buildnumber} {err}")
 
+def delete_build(project,buildnumber):
+  #/api/build/my-build?buildNumbers=51,52,55&artifacts=1
+  print(f"Deleting {project}#{buildnumber}")
+  url=f"{artifactory_url}/api/build/{project}?buildNumbers={buildnumber}&artifacts=1"
+  headers = {'content-type': 'application/json', 'X-JFrog-Art-Api': artifactory_apikey}
+  try:
+    r = requests.delete(url, headers=headers)  
+    r.raise_for_status()    
+    if r.status_code == 200:      
+      print(f"{project}#{buildnumber} deleted with all artifacts")
+  except requests.exceptions.HTTPError as err:
+    print(f"Failed to distribute {project}#{buildnumber} {err}")
+
 def get_versions(package):
   print(f"Getting versions for {package} from bintray")
   #GET /packages/:subject/:repo/:package
@@ -64,14 +77,15 @@ def delete_versions(package):
   for version in versions:
     delete_version(package,version)
   
-#distribute_build('sonar-java',21135)
+#distribute_build('sonar-java',21210)
+#delete_build('sonar-java',21210)
 #delete_version("org.sonarsource.java","3.10")
-delete_versions("org.sonarsource.analyzer-commons")
-delete_versions("org.sonarsource.auth.bitbucket")
-delete_versions("org.sonarsource.dotnet")
-delete_versions("org.sonarsource.javascript")
-delete_versions("org.sonarsource.sonar-plugins.dotnet.csharp")
-delete_versions("org.sonarsource.sonar-plugins.dotnet.tests")
-delete_versions("org.sonarsource.sonar-plugins.widget-lab")
-delete_versions("org.sonarsource.sonarlint.core")
-delete_versions("org.sonarsource.update-center")
+#delete_versions("org.sonarsource.analyzer-commons")
+#delete_versions("org.sonarsource.auth.bitbucket")
+#delete_versions("org.sonarsource.dotnet")
+#delete_versions("org.sonarsource.javascript")
+#delete_versions("org.sonarsource.sonar-plugins.dotnet.csharp")
+#delete_versions("org.sonarsource.sonar-plugins.dotnet.tests")
+#delete_versions("org.sonarsource.sonar-plugins.widget-lab")
+#delete_versions("org.sonarsource.sonarlint.core")
+#delete_versions("org.sonarsource.update-center")
