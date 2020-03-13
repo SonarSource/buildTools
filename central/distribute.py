@@ -13,6 +13,25 @@ bintray_api_url='https://api.bintray.com'
 bintray_user=os.environ.get('BINTRAY_USER','no bintray api user in env')  
 bintray_apikey=os.environ.get('BINTRAY_TOKEN','no bintray api key in env')  
 
+def promote(project,buildnumber):
+  targetrepo="sonarsource-public-releases"
+  status='release'
+
+  print(f"Promoting build {project}#{buildnumber} to {targetrepo}")
+  json_payload={
+      "status": f"{status}",
+      "targetRepo": f"{targetrepo}"
+  }
+
+  url = f"{artifactory_url}/api/build/promote/{release_request.project}/{release_request.buildnumber}"
+  headers = {'content-type': content_type_json, 'X-JFrog-Art-Api': artifactory_apikey}
+  r = requests.post(url, data=json.dumps(json_payload), headers=headers)
+  if r.status_code == 200:
+    return f"status:{status}"
+  else:
+    return f"status:{status} code:{r.status_code}"
+
+
 def distribute_build(project,buildnumber):
   print(f"Distributing {project}#{buildnumber} to bintray")
   payload={ 
