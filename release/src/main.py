@@ -128,7 +128,10 @@ def get_artifacts_to_publish(buildinfo):
   try:
     artifacts = repox_get_module_property_from_buildinfo(buildinfo,'artifactsToPublish')
   except:
-    artifacts = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTS_TO_PUBLISH')
+    try:
+      artifacts = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTS_TO_PUBLISH')
+    except:
+      print("no artifacts to publish")
   return artifacts
 
 def publish_all_artifacts(release_request,buildinfo):
