@@ -1,6 +1,6 @@
 from main import *
 
-sonar_dummy_request = ReleaseRequest('SonarSource', 'sonar-dummy', '379')
+sonar_dummy_request = ReleaseRequest('SonarSource', 'sonar-dummy', '393')
 sonar_dummy_build_info = repox_get_build_info(sonar_dummy_request)
 
 sonar_dummy_oss_request = ReleaseRequest('SonarSource', 'sonar-dummy-oss', '1386')
@@ -11,6 +11,9 @@ slang_enterprise_build_info = repox_get_build_info(slang_enterprise_request)
 
 sonar_security_request = ReleaseRequest('SonarSource', 'sonar-security', '1259')
 sonar_security_build_info = repox_get_build_info(sonar_security_request)
+
+sonarlint_org_request = ReleaseRequest('SonarSource', 'www.sonarlint.org', '1043')
+sonarlint_org_build_info = repox_get_build_info(sonarlint_org_request)
 
 def test_request_is_sonarlint():
   assert ReleaseRequest('SonarSource', 'sonarlint-core', '12345').is_sonarlint()
@@ -44,12 +47,19 @@ def test_get_artifacts_to_publish():
   artifacts = get_artifacts_to_publish(sonar_dummy_build_info)
   assert artifacts == 'com.sonarsource.dummy:sonar-dummy-plugin:jar'
 
+def test_get_artifacts_to_publish_empty():
+  artifacts = get_artifacts_to_publish(sonarlint_org_build_info)
+  assert artifacts == None
+
 def test_get_artifacts_to_publish_se():
   artifacts = get_artifacts_to_publish(slang_enterprise_build_info)
   print(f"artifacts: {artifacts}")
 
 def test_publish_all_artifacts():
   print(publish_all_artifacts(sonar_dummy_request, sonar_dummy_build_info))
+
+def test_publish_all_artifacts_empty():
+  print(publish_all_artifacts(sonarlint_org_request, sonarlint_org_build_info))
 
 def test_publish_all_artifacts_multi():
   print(publish_all_artifacts(slang_enterprise_request, slang_enterprise_build_info))
@@ -82,6 +92,9 @@ def test_check_public_not():
 
 def test_check_public():
   assert check_public(sonar_dummy_oss_build_info)
+
+def test_check_public_empty():
+  assert not check_public(sonarlint_org_build_info)
 
 def test_distribute_build(capsys):
   project="sonar-dummy-oss"

@@ -124,7 +124,7 @@ def repox_get_build_info(release_request):
     raise Exception('unknown build')
 
 def get_artifacts_to_publish(buildinfo):
-  artifacts = ''
+  artifacts = None
   try:
     artifacts = repox_get_module_property_from_buildinfo(buildinfo,'artifactsToPublish')
   except:
@@ -135,21 +135,24 @@ def get_artifacts_to_publish(buildinfo):
   return artifacts
 
 def publish_all_artifacts(release_request,buildinfo):
-  print(f"publishing artifats for {release_request.project}#{release_request.buildnumber}")
+  print(f"publishing artifacts for {release_request.project}#{release_request.buildnumber}")
+  release_url = ""    
   repo = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO').replace('qa', 'builds')
   version=get_version(buildinfo)
-  allartifacts=get_artifacts_to_publish(buildinfo)
-  artifacts = allartifacts.split(",")
-  artifacts_count = len(artifacts)
-  if artifacts_count == 1:
-    print("only 1")
-    return publish_artifact(artifacts[0],version,repo)
-  release_url = ""
-  print(f"{artifacts_count} artifacts")
-  for i in range(0, artifacts_count):
-    print(f"artifact {i}")
-    release_url = publish_artifact(artifacts[i - 1],version,repo)
+  allartifacts=get_artifacts_to_publish(buildinfo)  
+  if allartifacts:
+    print(f"publishing: {allartifacts}")
+    artifacts = allartifacts.split(",")
+    artifacts_count = len(artifacts)
+    if artifacts_count == 1:
+      print("only 1")
+      return publish_artifact(artifacts[0],version,repo)
+    print(f"{artifacts_count} artifacts")
+    for i in range(0, artifacts_count):
+      print(f"artifact {i}")
+      release_url = publish_artifact(artifacts[i - 1],version,repo)    
   return release_url
+  
 
 
 def publish_artifact(artifact_to_publish,version,repo):
@@ -165,15 +168,16 @@ def publish_artifact(artifact_to_publish,version,repo):
 
 def is_multi(buildinfo):
   allartifacts=get_artifacts_to_publish(buildinfo)
-  artifacts = allartifacts.split(",")
-  artifacts_count = len(artifacts)
-  if artifacts_count == 1:
-    return False
-  ref=artifacts[0][0:3]
-  for i in range(0, artifacts_count):
-    current=artifacts[i - 1][0:3]
-    if current != ref:
-      return True
+  if allartifacts:
+    artifacts = allartifacts.split(",")
+    artifacts_count = len(artifacts)
+    if artifacts_count == 1:
+      return False
+    ref=artifacts[0][0:3]
+    for i in range(0, artifacts_count):
+      current=artifacts[i - 1][0:3]
+      if current != ref:
+        return True
   return False
 
 
@@ -274,7 +278,10 @@ def notify_burgr(release_request,branch,sha1,status):
 
 def check_public(buildinfo):
   artifacts = get_artifacts_to_publish(buildinfo)
-  return "org.sonarsource" in artifacts
+  if artifacts:
+    return "org.sonarsource" in artifacts
+  else:
+    return False
 
 def distribute_build(project,buildnumber):
   print(f"Distributing {project}#{buildnumber} to bintray")
