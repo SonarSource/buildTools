@@ -21,9 +21,14 @@ def test_request_is_sonarlint():
 def test_request_is_not_sonarlint():
   assert not ReleaseRequest('SonarSource', 'sonar-java', '23456').is_sonarlint()
 
+def test_request_is_sonarqube():
+  assert ReleaseRequest('SonarSource', 'sonarqube', '12345').is_sonarqube()
+
+def test_request_is_not_sonarqube():
+  assert not ReleaseRequest('SonarSource', 'sonar-java', '23456').is_sonarqube()
+
 def test_repox_get_property_from_buildinfo():
   repo = repox_get_property_from_buildinfo(sonar_dummy_build_info, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
-  print(repo)
   assert repo == 'sonarsource-private-qa'
 
 def test_promote():

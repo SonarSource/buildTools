@@ -35,6 +35,11 @@ OSS_REPO="Distribution"
 COMMERCIAL_REPO="CommercialDistribution"
 bintray_target_repo="SonarQube-bintray"
 
+#javadoc
+javadoc_host='javadocs.sonarsource.org'
+javadoc_ssh_user='ubuntu'
+javadoc_ssh_key='id_rsa_ssuopsa'
+
 
 content_type_json='application/json'
 
@@ -46,6 +51,9 @@ class ReleaseRequest:
 
   def is_sonarlint(self):
     return self.project.startswith('sonarlint-')
+
+  def is_sonarqube(self):
+    return self.project.startswith('sonarqube')
 
 # [START functions_promote_http]
 def release(request):
@@ -75,7 +83,11 @@ def release(request):
       if not release_request.is_sonarlint():
         if check_public(buildinfo):
           distribute_build(project,buildnumber)
-        rules_cov(release_request,buildinfo)
+
+        if release_request.is_sonarqube():
+          upload_javadoc(buildinfo)
+        else:
+          rules_cov(release_request,buildinfo)
     except Exception as e:
       notify_burgr(release_request,branch,sha1,'failed')
       print(f"Could not get repository for {project} {buildnumber} {str(e)}")
@@ -255,6 +267,44 @@ def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
   ssh_client.close()
   release_url = f"{binaries_url}/{binaries_repo}/{aid}/{aid}-{version}.{ext}"
   return release_url
+
+def upload_javadoc(buildinfo):
+  version=get_version(buildinfo)
+  gid="org.sonarsource.sonarqube"
+  gid_path=gid.replace('.','/')
+  aid="sonar-plugin-api"
+  filename=f"{aid}-{version}-javadoc.jar"
+  url=f"{artifactory_url}/sonarsource-releases/{gid_path}/{aid}/{version}/{filename}"
+
+  print(f"Download Javadoc from {url}")
+  opener = urllib.request.build_opener()
+  opener.addheaders = [('X-JFrog-Art-Api', artifactory_apikey)]
+  urllib.request.install_opener(opener)
+  tempfile=f"/tmp/{filename}"
+  urllib.request.urlretrieve(url, tempfile)
+  print('Javadoc artifact downloaded')
+
+  # Prepare SSH/SCP
+  ssh_client=paramiko.SSHClient()
+  ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+  ssh_client.connect(hostname=javadoc_host, username=javadoc_ssh_user, key_filename=javadoc_ssh_key)
+  
+  # Upload artifact
+  scp = SCPClient(ssh_client.get_transport())
+  print('SCP connection created')
+  remote_file='doc.zip'
+  scp.put(tempfile, remote_path=f"./{remote_file}")
+  print(f"Uploaded {tempfile} to ./{remote_file}")
+  scp.close()
+  print('SCP connection closed')
+
+  # Deploy artifact
+  print(f"Starting deploy of {version}...")
+  stdin,stdout,stderr=ssh_client.exec_command(f"cd /vol/www/javadocs.sonarsource.org/ && mkdir -p {version}/apidocs && cd {version}/apidocs && unzip ~/{remote_file} && rm ~/{remote_file}")
+  print(stdout.readlines())
+  ssh_client.close()
+  print('Deploy finished, SSH connection closed')
+
 
 # This will only work for a branch build, not a PR build
 # because a PR build notification needs `"pr_number": NUMBER` instead of `'branch': NAME`
