@@ -226,6 +226,10 @@ def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
   opener = urllib.request.build_opener()
   opener.addheaders = [('X-JFrog-Art-Api', artifactory_apikey)]
   urllib.request.install_opener(opener)
+  #for sonarqube rename artifact from sonar-application.zip to sonarqube.zip
+  if aid == "sonar-application":
+    filename=f"sonarqube-{version}.zip"
+    aid="sonarqube"
   tempfile=f"/tmp/{filename}"
   urllib.request.urlretrieve(url, tempfile)
   print(f'donwloaded {tempfile}')
