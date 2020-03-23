@@ -40,10 +40,13 @@ def releasability_check(request: Request):
     # Read branch from optional ?branch=xxx/yyy/zzz parameter
     branch = request.args.get('branch', 'master')
 
+    # Read nbOfCommits from optional ?nbOfCommits=xxx parameter, by default we look at the last 5 commits of a branch
+    nb_of_commits = request.args.get('nbOfCommits', 5)
+
     try:
         authorization = validate_authorization_header(request.headers, project)
         if authorization == AUTHENTICATED:
-            releasability = releasability_checks(project, version, branch)
+            releasability = releasability_checks(project, version, branch, nb_of_commits)
             if releasability:
                 return make_response(releasability)
             return make_response("Unexpected error occurred", 500)
@@ -78,13 +81,14 @@ def github_auth(token: str, project: str):
     return False
 
 
-def releasability_checks(project: str, version: str, branch: str):
+def releasability_checks(project: str, version: str, branch: str, nb_of_commits: int):
     r"""Starts the releasability check operation. Post the start releasability HTTP request to Burgrx and polls until
       all checks have completed.
 
       :param project: Github project name, ex: 'sonar-dummy'
       :param version: full version to be checked for releasability.
       :param branch: branch to be checked for releasability.
+      :param nb_of_commits: number of latest commits on the branch to get the status from.
       :return: True if releasability check succeeded, False otherwise.
       """
 
@@ -94,7 +98,7 @@ def releasability_checks(project: str, version: str, branch: str):
     message = response.json().get('message', '')
     if response.status_code == 200 and message == "done":
         print(f"Releasability checks started successfully")
-        return start_polling_releasability_status(project, version, branch)
+        return start_polling_releasability_status(project, version, branch, nb_of_commits)
     else:
         print(f"Releasability checks failed to start: {response} '{message}'")
         raise Exception(f"Releasability checks failed to start: '{message}'")
@@ -103,6 +107,7 @@ def releasability_checks(project: str, version: str, branch: str):
 def start_polling_releasability_status(project: str,
                                        version: str,
                                        branch: str,
+                                       nb_of_commits: int,
                                        step: int = 4,
                                        timeout: int = 300,
                                        check_releasable: bool = True):
@@ -111,6 +116,7 @@ def start_polling_releasability_status(project: str,
       :param project: Github project name, ex: 'sonar-dummy'
       :param version: full version to be checked for releasability.
       :param branch: branch to be checked for releasability.
+      :param nb_of_commits: number of latest commits on the branch to get the status from.
       :param step: step in seconds between polls. (For testing, otherwise use default value)
       :param timeout: timeout in seconds for attempting to get status. (For testing, otherwise use default value)
       :param check_releasable: whether should check for 'releasable' flag in json response. (For testing, otherwise use default value)
@@ -118,7 +124,7 @@ def start_polling_releasability_status(project: str,
       """
 
     url_encoded_project = urllib.parse.quote(f"SonarSource/{project}", safe='')
-    url = f"{burgrx_url}/api/commitPipelinesStages?project={url_encoded_project}&branch={branch}&nbOfCommits=1&startAtCommit=0"
+    url = f"{burgrx_url}/api/commitPipelinesStages?project={url_encoded_project}&branch={branch}&nbOfCommits={nb_of_commits}&startAtCommit=0"
 
     try:
         releasability = polling.poll(
@@ -142,14 +148,13 @@ def get_latest_releasability_stage(response: Response, version: str, check_relea
     if response.status_code != 200:
         raise Exception(f"Error occurred while trying to retrieve current releasability status: {response}")
 
-    jsonobjects = response.json()
-    if len(jsonobjects) != 1:
-        raise Exception(f"Unexpected response from burgrx: '{jsonobjects}'")
+    commits_info = response.json()
+    if len(commits_info) == 0:
+        raise Exception(f"No commit information found in burgrx for this branch")
 
-    pipelines = jsonobjects[0].get('pipelines') or []
-    pipeline = next((x for x in pipelines if x.get('version') == version), None)
+    pipeline = get_corresponding_pipeline(commits_info, version)
     if not pipeline:
-        raise Exception(f"No pipeline found for version '{version}': {pipelines}")
+        raise Exception(f"No pipeline info found for version '{version}'")
 
     if check_releasable and not pipeline.get('releasable'):
         raise Exception(f"Pipeline '{pipeline}' is not releasable")
@@ -162,6 +167,16 @@ def get_latest_releasability_stage(response: Response, version: str, check_relea
 
     print("Releasability checks still running")
     return False
+
+
+def get_corresponding_pipeline(commits_info, version):
+    for commit_info in commits_info:
+        pipelines = commit_info.get('pipelines') or []
+        pipeline = next((x for x in pipelines if x.get('version') == version), None)
+        if pipeline is not None:
+            return pipeline
+
+    return None
 
 
 def is_finished(status: str):
