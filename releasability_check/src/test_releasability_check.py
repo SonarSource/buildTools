@@ -205,24 +205,25 @@ def test_get_latest_releasability_stage_unfinished_releasability(capsys):
 def test_start_polling_releasability_status():
     project = "sonar-dummy-oss"
     version = "1.0.0"
+    branch = "master"
 
     responses.add(responses.GET,
-                  f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch=master&nbOfCommits=1&startAtCommit=0",
+                  f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch={branch}&nbOfCommits=1&startAtCommit=0",
                   json=[{"pipelines": [{"version": "1.0.0", "releasable": True,
                                         "stages": [{"type": "releasability", "status": "passed"}]}]}],
                   status=200)
 
-    result = start_polling_releasability_status(project, version)
+    result = start_polling_releasability_status(project, version, branch)
     assert result is None
 
     metadata = {"status": "ERRORED"}
     responses.replace(responses.GET,
-                      f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch=master&nbOfCommits=1&startAtCommit=0",
+                      f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch={branch}&nbOfCommits=1&startAtCommit=0",
                       json=[{"pipelines": [{"version": "1.0.0", "releasable": True, "stages": [
                           {"type": "releasability", "status": "passed", "metadata": metadata}]}]}],
                       status=200)
 
-    result = start_polling_releasability_status(project, version)
+    result = start_polling_releasability_status(project, version, branch)
     assert result == metadata
 
 
@@ -230,17 +231,18 @@ def test_start_polling_releasability_status():
 def test_start_polling_releasability_status_timeout(capsys):
     project = "sonar-dummy-oss"
     version = "1.0.0"
+    branch = "master"
 
     def request_callback(request):
         time.sleep(2)
         return 200, {}, b'[ { "pipelines": [ { "version": "1.0.0", "releasable": true } ] } ]'
 
     responses.add_callback(responses.GET,
-                           f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch=master&nbOfCommits=1&startAtCommit=0",
+                           f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch={branch}&nbOfCommits=1&startAtCommit=0",
                            callback=request_callback,
                            content_type='application/json')
 
-    result = start_polling_releasability_status(project, version, 10, 1)
+    result = start_polling_releasability_status(project, version, branch, 10, 1)
     captured = capsys.readouterr()
     assert result is False
     assert captured.out == "Polling releasability status...\nReleasability checks still running\nReleasability timed out\n"
@@ -250,16 +252,17 @@ def test_start_polling_releasability_status_timeout(capsys):
 def test_start_polling_releasability_status_fail(capsys):
     project = "sonar-dummy-oss"
     version = "1.0.0"
+    branch = "master"
 
     def request_callback(request):
         return 200, {}, b'{}'
 
     responses.add_callback(responses.GET,
-                           f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch=master&nbOfCommits=1&startAtCommit=0",
+                           f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch={branch}&nbOfCommits=1&startAtCommit=0",
                            callback=request_callback,
                            content_type='application/json')
 
-    result = start_polling_releasability_status(project, version)
+    result = start_polling_releasability_status(project, version, branch)
     captured = capsys.readouterr()
     assert result is False
     assert captured.out == "Polling releasability status...\nCannot complete releasability checks: Unexpected response from burgrx: '{}'\n"
@@ -282,7 +285,7 @@ def test_releasability_checks():
                       {"type": "releasability", "status": "passed", "metadata": metadata}]}]}],
                   status=200)
 
-    result = releasability_checks(project, version)
+    result = releasability_checks(project, version, 'master')
     assert result == metadata
 
 
@@ -297,7 +300,7 @@ def test_releasability_checks_fail(capsys):
                   status=200)
 
     with pytest.raises(Exception) as e:
-        releasability_checks(project, version)
+        releasability_checks(project, version, 'master')
     captured = capsys.readouterr()
     assert str(e.value) == "Releasability checks failed to start: ''"
     assert captured.out == "Starting releasability check: sonar-dummy-oss#1.0.0\nReleasability checks failed to start: <Response [200]> ''\n"
@@ -308,7 +311,7 @@ def test_releasability_checks_fail(capsys):
                       status=200)
 
     with pytest.raises(Exception) as e:
-        releasability_checks(project, version)
+        releasability_checks(project, version, 'master')
     captured = capsys.readouterr()
     assert str(e.value) == "Releasability checks failed to start: 'no promoted artifact found'"
     assert captured.out == "Starting releasability check: sonar-dummy-oss#1.0.0\nReleasability checks failed to start: <Response [200]> 'no promoted artifact found'\n"
@@ -319,7 +322,7 @@ def test_releasability_checks_fail(capsys):
                       status=400)
 
     with pytest.raises(Exception) as e:
-        releasability_checks(project, version)
+        releasability_checks(project, version, 'master')
     captured = capsys.readouterr()
     assert str(e.value) == "Releasability checks failed to start: 'done'"
     assert captured.out == "Starting releasability check: sonar-dummy-oss#1.0.0\nReleasability checks failed to start: <Response [400]> 'done'\n"
@@ -332,7 +335,7 @@ def test_releasability_checks_fail(capsys):
                   f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch=master&nbOfCommits=1&startAtCommit=0",
                   json=[{"pipelines": []}],
                   status=200)
-    result = releasability_checks(project, version)
+    result = releasability_checks(project, version, 'master')
     captured = capsys.readouterr()
     assert result is False
     assert "Cannot complete releasability checks: No pipeline found for version '1.0.0': []" in captured.out
@@ -368,6 +371,7 @@ def test_releasability_check():
     assert result.status_code == 200
     assert result.data == b'{"status":"ERRORED"}\n'
 
+
 @responses.activate
 def test_releasability_no_artifact():
     headers = {'Authorization': 'token myMockedToken'}
@@ -390,6 +394,7 @@ def test_releasability_no_artifact():
 
     assert result.status_code == 500
     assert result.data == b"Releasability checks failed to start: 'no promoted artifact found'"
+
 
 @responses.activate
 def test_releasability_check_fail():

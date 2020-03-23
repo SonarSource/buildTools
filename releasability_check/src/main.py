@@ -84,6 +84,7 @@ def releasability_checks(project: str, version: str, branch: str):
 
       :param project: Github project name, ex: 'sonar-dummy'
       :param version: full version to be checked for releasability.
+      :param branch: branch to be checked for releasability.
       :return: True if releasability check succeeded, False otherwise.
       """
 
@@ -109,6 +110,7 @@ def start_polling_releasability_status(project: str,
 
       :param project: Github project name, ex: 'sonar-dummy'
       :param version: full version to be checked for releasability.
+      :param branch: branch to be checked for releasability.
       :param step: step in seconds between polls. (For testing, otherwise use default value)
       :param timeout: timeout in seconds for attempting to get status. (For testing, otherwise use default value)
       :param check_releasable: whether should check for 'releasable' flag in json response. (For testing, otherwise use default value)
