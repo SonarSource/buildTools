@@ -246,9 +246,11 @@ def test_start_polling_releasability_status_timeout(capsys):
                            callback=request_callback,
                            content_type='application/json')
 
-    result = start_polling_releasability_status(project, version, branch, nb_of_commits, 10, 1)
+    with pytest.raises(Exception) as e:
+        start_polling_releasability_status(project, version, branch, nb_of_commits, 10, 1)
+
     captured = capsys.readouterr()
-    assert result is False
+    assert str(e.value) == "Releasability timed out"
     assert captured.out == "Polling releasability status...\nReleasability checks still running\nReleasability timed out\n"
 
 
@@ -267,9 +269,11 @@ def test_start_polling_releasability_status_fail(capsys):
                            callback=request_callback,
                            content_type='application/json')
 
-    result = start_polling_releasability_status(project, version, branch, nb_of_commits)
+    with pytest.raises(Exception) as e:
+        start_polling_releasability_status(project, version, branch, nb_of_commits)
+
     captured = capsys.readouterr()
-    assert result is False
+    assert str(e.value) == "No commit information found in burgrx for this branch"
     assert captured.out == "Polling releasability status...\nCannot complete releasability checks: No commit information found in burgrx for this branch\n"
 
 
@@ -340,9 +344,11 @@ def test_releasability_checks_fail(capsys):
                   f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch=master&nbOfCommits=1&startAtCommit=0",
                   json=[{"pipelines": []}],
                   status=200)
-    result = releasability_checks(project, version, 'master', 1)
+
+    with pytest.raises(Exception) as e:
+        releasability_checks(project, version, 'master', 1)
     captured = capsys.readouterr()
-    assert result is False
+    assert str(e.value) == "No pipeline info found for version '1.0.0'"
     assert "Cannot complete releasability checks: No pipeline info found for version '1.0.0'" in captured.out
 
 
@@ -388,6 +394,37 @@ def test_releasability_check():
 
     assert result.status_code == 200
     assert result.data == b'{"status":"PASSED"}\n'
+
+
+@responses.activate
+def test_releasability_check_error_forwarded():
+    headers = {'Authorization': 'token myMockedToken'}
+    project = "sonar-dummy"
+    version = "1.0.0.223"
+    metadata = {"status": "PASSED"}
+
+    responses.add(responses.GET,
+                  "https://api.github.com/repos/SonarSource/sonar-dummy",
+                  json={"permissions": {"push": True}},
+                  status=200)
+
+    responses.add(responses.POST,
+                  f"https://burgrx.sonarsource.com/api/project/SonarSource/{project}/releasability/start/{version}",
+                  json={"message": "done"},
+                  status=200)
+
+    responses.add(responses.GET,
+                  f"https://burgrx.sonarsource.com/api/commitPipelinesStages?project=SonarSource%2F{project}&branch=master&nbOfCommits=5&startAtCommit=0",
+                  json=[{"pipelines": [{"version": "1.0.0.222", "releasable": True, "stages": [
+                      {"type": "releasability", "status": "passed", "metadata": metadata}]}]}],
+                  status=200)
+
+    app = flask.Flask(__name__)
+    with app.test_request_context("/SonarSource/sonar-dummy/1.0.0.223", headers=headers):
+        result = releasability_check(flask.request)
+
+    assert result.status_code == 500
+    assert result.data == b"No pipeline info found for version '1.0.0.223'"
 
 
 @responses.activate

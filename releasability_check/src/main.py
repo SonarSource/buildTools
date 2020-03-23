@@ -137,9 +137,10 @@ def start_polling_releasability_status(project: str,
         return releasability.get('metadata')
     except TimeoutException:
         print("Releasability timed out")
+        raise Exception("Releasability timed out")
     except Exception as e:
         print(f"Cannot complete releasability checks:", e)
-    return False
+        raise e
 
 
 def get_latest_releasability_stage(response: Response, version: str, check_releasable: bool = True):
