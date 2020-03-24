@@ -14,6 +14,8 @@ bintray_api_url='https://api.bintray.com'
 bintray_user=os.environ.get('BINTRAY_USER','no bintray api user in env')  
 bintray_apikey=os.environ.get('BINTRAY_TOKEN','no bintray api key in env')  
 
+content_type_json='application/json'
+
 def promote(project,buildnumber):
   targetrepo="sonarsource-public-releases"
   status='release'
@@ -96,6 +98,61 @@ def delete_versions(package):
   versions=get_versions(package)
   for version in versions:
     delete_version(package,version)
+
+def repox_get_property_from_buildinfo(project, buildnumber, property):  
+  url = f"{artifactory_url}/api/build/{project}/{buildnumber}"
+  headers = {'content-type': 'application/json', 'X-JFrog-Art-Api': artifactory_apikey}
+  r = requests.get(url, headers=headers)  
+  buildinfo = r.json()
+  if r.status_code == 200:      
+    return buildinfo['buildInfo']['properties'][property]
+  else:
+    print(f'repoxGetPropertyFromBuildInfo call with URL {url} failed, the response is {buildinfo}')
+    raise Exception('unknown build')
+
+def promote(project,buildnumber,type,revoke):  
+  multi=True
+  targetrepo="sonarsource-public-builds"
+  
+  switcher = {
+    'release':'release',
+    'pr':'it-passed-pr',
+    'branch':'it-passed'
+  }
+  status=switcher.get(type, "not a possible status")
+
+  repo = repox_get_property_from_buildinfo(project, buildnumber, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
+  
+  if revoke:
+    print("revoking release")
+    targetrepo = repo.replace('qa', 'builds')
+    src="releases"
+    dest="builds"
+  else:
+    targetrepo = repo.replace('qa', 'releases')
+    src="releases"
+    dest="builds"
+
+  print(f"Promoting build {project}#{buildnumber} to {targetrepo} with status: {status}")
+  json_payload={
+      "status": f"{status}",
+      "targetRepo": f"{targetrepo}"
+  }
+
+  if multi:
+    print(f"Promoting multi repositories")
+    url = f"{artifactory_url}/api/plugins/execute/multiRepoPromote?params=buildName={project};buildNumber={buildnumber};src1=sonarsource-private-{src};target1=sonarsource-private-{dest};src2=sonarsource-public-{src};target2=sonarsource-public-{dest};status={status}"
+    headers = {'X-JFrog-Art-Api': artifactory_apikey}
+    r = requests.get(url, headers=headers)
+  else:
+    url = f"{artifactory_url}/api/build/promote/{project}/{buildnumber}"
+    headers = {'content-type': content_type_json, 'X-JFrog-Art-Api': artifactory_apikey}
+    r = requests.post(url, data=json.dumps(json_payload), headers=headers)
+  if r.status_code == 200:
+    return f"status:{status}"
+  else:
+    return f"status:{status} code:{r.status_code}"
+
   
 #distribute_build('sonar-java',21210)
 #delete_build('sonar-java',21210)
@@ -104,18 +161,16 @@ def delete_versions(package):
 
 def main():
   parser = argparse.ArgumentParser(description='central distribution')
-  parser.add_argument('command', nargs='+', help='command can be update start stop deploy')  
+  parser.add_argument('command', nargs='+', help='see code for help')  
   args = parser.parse_args()
 
-  host1='server161.ec2.sonarsource.io'
-  host2='server162.ec2.sonarsource.io'
-  host3='server166.ec2.sonarsource.io'
-  hosts=[host1,host2,host3] 
-
+  
   if args.command[0] == "dist":
     distribute_build(args.command[1],args.command[2])
   elif args.command[0] == "del":
     delete_build(args.command[1],args.command[2])
+  elif args.command[0] == "promote":    
+    promote(args.command[1],args.command[2],args.command[3],args.command[4])
   else:
     print(f"inavlid {args.command} command")
 
