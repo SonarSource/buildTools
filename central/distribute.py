@@ -3,6 +3,13 @@ import os
 import requests
 import json
 import argparse
+from datetime import datetime, timezone
+from requests.auth import HTTPBasicAuth
+
+#burgr
+burgrx_url = 'https://burgrx.sonarsource.com'
+burgrx_user = os.environ.get('BURGRX_USER', 'no burgrx user in env')
+burgrx_password = os.environ.get('BURGRX_PASSWORD', 'no burgrx password in env')
 
 #repox
 artifactory_apikey=os.environ.get('ARTIFACTORY_API_KEY','no artifactory api key in env')  
@@ -153,6 +160,27 @@ def promote(project,buildnumber,type,revoke):
   else:
     return f"status:{status} code:{r.status_code}"
 
+def notify_burgr(project,buildnumber,branch,sha1,status):
+  payload={
+    'repository': f"SonarSource/{project}",
+    'pipeline': buildnumber,
+    'name': 'RELEASE',
+    'system': 'github',
+    'type': 'release',
+    'number': buildnumber,
+    'branch': branch,
+    'sha1': sha1,
+    'url':f"https://",
+    'status': status,
+    'metadata': '',
+    'started_at':datetime.now(timezone.utc).astimezone().isoformat(),
+    'finished_at':datetime.now(timezone.utc).astimezone().isoformat()
+  }
+  print(f"burgr payload:{payload}")
+  url=f"{burgrx_url}/api/stage"
+  r = requests.post(url, json=payload, auth=HTTPBasicAuth(burgrx_user, burgrx_password))
+  if r.status_code != 201:
+    print(f"burgr notification failed code:{r.status_code}" )
   
 #distribute_build('sonar-java',21210)
 #delete_build('sonar-java',21210)
@@ -171,6 +199,8 @@ def main():
     delete_build(args.command[1],args.command[2])
   elif args.command[0] == "promote":    
     promote(args.command[1],args.command[2],args.command[3],args.command[4])
+  elif args.command[0] == "burgr":
+    notify_burgr("sonar-enterprise","33349","branch-7.9","ded65927f38a2b43427165f32243223c10bd415c","passed")
   else:
     print(f"inavlid {args.command} command")
 
