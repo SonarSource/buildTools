@@ -2,6 +2,7 @@ import sys
 import os
 import requests
 import json
+import argparse
 
 #repox
 artifactory_apikey=os.environ.get('ARTIFACTORY_API_KEY','no artifactory api key in env')  
@@ -100,11 +101,23 @@ def delete_versions(package):
 #delete_build('sonar-java',21210)
 #delete_version("org.sonarsource.java","3.10")
 #delete_versions("org.sonarsource.analyzer-commons")
-#delete_versions("org.sonarsource.auth.bitbucket")
-#delete_versions("org.sonarsource.dotnet")
-#delete_versions("org.sonarsource.javascript")
-#delete_versions("org.sonarsource.sonar-plugins.dotnet.csharp")
-#delete_versions("org.sonarsource.sonar-plugins.dotnet.tests")
-#delete_versions("org.sonarsource.sonar-plugins.widget-lab")
-#delete_versions("org.sonarsource.sonarlint.core")
-#delete_versions("org.sonarsource.update-center")
+
+def main():
+  parser = argparse.ArgumentParser(description='central distribution')
+  parser.add_argument('command', nargs='+', help='command can be update start stop deploy')  
+  args = parser.parse_args()
+
+  host1='server161.ec2.sonarsource.io'
+  host2='server162.ec2.sonarsource.io'
+  host3='server166.ec2.sonarsource.io'
+  hosts=[host1,host2,host3] 
+
+  if args.command[0] == "dist":
+    distribute_build(args.command[1],args.command[2])
+  elif args.command[0] == "del":
+    delete_build(args.command[1],args.command[2])
+  else:
+    print(f"inavlid {args.command} command")
+
+if __name__ == '__main__':
+    main()
