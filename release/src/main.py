@@ -184,7 +184,7 @@ def is_multi(buildinfo):
 
 def promote(release_request,buildinfo):
   targetrepo="sonarsource-public-releases"
-  status='release'
+  status='released'
 
   repo = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO')
   targetrepo = repo.replace('qa', 'releases')
