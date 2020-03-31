@@ -64,20 +64,18 @@ def release(request):
   _, org, project, buildnumber = request.path.split("/")
   release_request = ReleaseRequest(org, project, buildnumber)
   buildinfo=repox_get_build_info(release_request)
-  branch=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GITHUB_BRANCH')
-  sha1=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GIT_SHA1')
   authorization_result = validate_authorization_header(request, project)
   if authorization_result == AUTHENTICATED:
     try:
       promote(release_request, buildinfo)
       publish_all_artifacts(release_request,buildinfo)
-      notify_burgr(release_request,branch,sha1,'passed')
+      notify_burgr(release_request,buildinfo,'passed')
       if not release_request.is_sonarlint():
         if check_public(buildinfo):
           distribute_build(project,buildnumber)
         rules_cov(release_request,buildinfo)
     except Exception as e:
-      notify_burgr(release_request,branch,sha1,'failed')
+      notify_burgr(release_request,buildinfo,'failed')
       print(f"Could not get repository for {project} {buildnumber} {str(e)}")
       return make_response(str(e),500)
   else:
@@ -102,11 +100,17 @@ def validate_authorization_header(request, project):
   else:
     return "Missing access token"
 
-def repox_get_property_from_buildinfo(buildinfo, property):
-  return buildinfo['buildInfo']['properties'][property]
+def repox_get_property_from_buildinfo(buildinfo, property, default=""):
+  try:
+    return buildinfo['buildInfo']['properties'][property]
+  except:
+    return default
 
-def repox_get_module_property_from_buildinfo(buildinfo, property):
-  return buildinfo['buildInfo']['modules'][0]['properties'][property]
+def repox_get_module_property_from_buildinfo(buildinfo, property, default=""):
+  try:
+    return buildinfo['buildInfo']['modules'][0]['properties'][property]
+  return:
+    return default
 
 def get_version(buildinfo):
   return buildinfo['buildInfo']['modules'][0]['id'].split(":")[-1]
@@ -258,7 +262,9 @@ def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
 
 # This will only work for a branch build, not a PR build
 # because a PR build notification needs `"pr_number": NUMBER` instead of `'branch': NAME`
-def notify_burgr(release_request,branch,sha1,status):
+def notify_burgr(release_request,buildinfo,status):
+  branch=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GITHUB_BRANCH',"master")
+  sha1=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GIT_SHA1')    
   payload={
     'repository': f"{release_request.org}/{release_request.project}",
     'pipeline': release_request.buildnumber,
