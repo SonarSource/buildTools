@@ -106,12 +106,9 @@ def repox_get_property_from_buildinfo(buildinfo, property, default=""):
   except:
     return default
 
-def repox_get_module_property_from_buildinfo(buildinfo, property, default=""):
-  try:
-    return buildinfo['buildInfo']['modules'][0]['properties'][property]
-  return:
-    return default
-
+def repox_get_module_property_from_buildinfo(buildinfo, property):
+  return buildinfo['buildInfo']['modules'][0]['properties'][property]
+  
 def get_version(buildinfo):
   return buildinfo['buildInfo']['modules'][0]['id'].split(":")[-1]
 
@@ -130,10 +127,10 @@ def repox_get_build_info(release_request):
 def get_artifacts_to_publish(buildinfo):
   artifacts = None
   try:
-    artifacts = repox_get_module_property_from_buildinfo(buildinfo,'artifactsToPublish')
+    artifacts = repox_get_module_property_from_buildinfo(buildinfo,'artifactsToPublish')    
   except:
     try:
-      artifacts = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTS_TO_PUBLISH')
+      artifacts = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTS_TO_PUBLISH')      
     except:
       print("no artifacts to publish")
   return artifacts
