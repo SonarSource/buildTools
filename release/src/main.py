@@ -35,8 +35,12 @@ OSS_REPO="Distribution"
 COMMERCIAL_REPO="CommercialDistribution"
 bintray_target_repo="SonarQube-bintray"
 
+#github
+githup_api_url="https://api.github.com"
+github_token=os.environ.get('GITHUB_TOKEN','no github token in env')
 
 content_type_json='application/json'
+content_type_zip='application/zip'
 
 class ReleaseRequest:
   def __init__(self, org, project, buildnumber):
@@ -92,7 +96,9 @@ def github_auth(token,project):
 
 def validate_authorization_header(request, project):
   if request.headers['Authorization'] and request.headers['Authorization'].split()[0] == 'token':
-    if github_auth(request.headers['Authorization'].split()[1],project):
+    github_token=request.headers['Authorization'].split()[1]
+    if github_auth(github_token,project):
+      
       print("Authenticated with github token")
       return AUTHENTICATED
     else:
@@ -147,7 +153,7 @@ def publish_all_artifacts(release_request,buildinfo):
     artifacts_count = len(artifacts)
     if artifacts_count == 1:
       print("only 1")
-      return publish_artifact(artifacts[0],version,repo)
+      return publish_artifact(release_request,artifacts[0],version,repo)
     print(f"{artifacts_count} artifacts")
     for i in range(0, artifacts_count):
       print(f"artifact {i}")
@@ -156,7 +162,7 @@ def publish_all_artifacts(release_request,buildinfo):
   
 
 
-def publish_artifact(artifact_to_publish,version,repo):
+def publish_artifact(release_request,artifact_to_publish,version,repo):
   print(f"publishing {artifact_to_publish}#{version}")
   artifact = artifact_to_publish.split(":")
   gid = artifact[0]
@@ -165,7 +171,7 @@ def publish_artifact(artifact_to_publish,version,repo):
   qual = ''
   artifactory_repo = repo.replace('builds', 'releases')
   print(f"{gid} {aid} {ext}")
-  return upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version)
+  return upload_to_binaries(release_request,artifactory_repo,gid,aid,qual,ext,version)
 
 def is_multi(buildinfo):
   allartifacts=get_artifacts_to_publish(buildinfo)
@@ -210,7 +216,7 @@ def promote(release_request,buildinfo):
     return f"status:{status} code:{r.status_code}"
 
 
-def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
+def upload_to_binaries(release_request,artifactory_repo,gid,aid,qual,ext,version):
   binaries_repo=OSS_REPO
   #download artifact
   gid_path=gid.replace(".", "/")
@@ -244,10 +250,13 @@ def upload_to_binaries(artifactory_repo,gid,aid,qual,ext,version):
   print(f'created {directory}')
   scp = SCPClient(ssh_client.get_transport())
   print('scp connexion created')
-  #upload file
+  #upload file to binaries
   scp.put(tempfile, remote_path=directory)
   print(f'uploaded {tempfile} to {directory}')
   scp.close()
+  #upload file to github
+  release_info=get_release_info(release_request,version)
+  attach_asset_to_github_release(release_info,tempfile,filename)
   #sign file
   stdin,stdout,stderr=ssh_client.exec_command(f"gpg --batch --passphrase {passphrase} --armor --detach-sig --default-key infra@sonarsource.com {directory}/{filename}")
   print(f'signed {directory}/{filename}')
@@ -363,3 +372,22 @@ def rules_cov(release_request,buildinfo):
   except Exception as err:
     print(error)
     raise Exception(f"{error} {err}")
+
+def get_release_info(release_request, version):
+  url=f"{githup_api_url}/repos/{release_request.org}/{release_request.project}/releases"
+  headers={'Authorization': f"token {github_token}"}
+  r=requests.get(url, headers=headers)
+  releases=r.json()
+  for release in releases:
+      if not isinstance(release, str) and release.get('tag_name') == version:
+          return release
+  print(f"::error No release info found for tag '{version}'.\nReleases: {releases}")
+  return None
+
+def attach_asset_to_github_release(release_info,file_path,filename):
+  files = {'upload_file': open(file_path,'rb')}
+  upload_url=release_info.get('upload_url').replace('{?name,label}',f"?name={filename}")
+  print(upload_url)
+  headers = {'content-type': content_type_zip, 'Authorization': f"token {github_token}"}
+  r = requests.post(upload_url, files=files, headers=headers)
+  return r

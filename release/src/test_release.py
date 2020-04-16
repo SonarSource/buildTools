@@ -1,6 +1,6 @@
 from main import *
 
-sonar_dummy_request = ReleaseRequest('SonarSource', 'sonar-dummy', '393')
+sonar_dummy_request = ReleaseRequest('SonarSource', 'sonar-dummy', '422')
 sonar_dummy_build_info = repox_get_build_info(sonar_dummy_request)
 
 sonar_dummy_oss_request = ReleaseRequest('SonarSource', 'sonar-dummy-oss', '1386')
@@ -12,7 +12,7 @@ slang_enterprise_build_info = repox_get_build_info(slang_enterprise_request)
 sonar_security_request = ReleaseRequest('SonarSource', 'sonar-security', '1259')
 sonar_security_build_info = repox_get_build_info(sonar_security_request)
 
-sonarlint_org_request = ReleaseRequest('SonarSource', 'www.sonarlint.org', '1043')
+sonarlint_org_request = ReleaseRequest('SonarSource', 'www.sonarlint.org', '1075')
 sonarlint_org_build_info = repox_get_build_info(sonarlint_org_request)
 
 def test_request_is_sonarlint():
@@ -69,7 +69,8 @@ def test_get_version():
   print(version)
 
 def test_upload_to_binaries():
-  upload_to_binaries('sonarsource-public-releases','org.sonarsource.java','sonar-java-plugin','','jar','6.0.2.20657')
+  upload_to_binaries(sonar_dummy_request,'sonarsource-private-releases','com.sonarsource.dummy','sonar-dummy-plugin','','jar','10.0.0.422')
+
 
 def test_github_auth():
   token=os.environ.get('GITHUB_TOKEN','no github token in env')  
@@ -117,3 +118,12 @@ def test_get_cirrus_repository_id():
 
 def test_rules_cov():
   rules_cov(sonar_security_request,sonar_security_build_info)
+
+def test_get_release_id():
+  release_info = get_release_info(sonar_dummy_request, "10.0.0.387")
+  assert "24468455" == str(release_info.get('id'))
+
+def test_attach_asset_to_github_release():
+  release_info = get_release_info(sonar_dummy_request, "10.0.0.387")
+  r=attach_asset_to_github_release(release_info,"./test.zip","test.zip")
+  print(r.text)
