@@ -122,7 +122,7 @@ def promote(project,buildnumber,type,revoke):
   targetrepo="sonarsource-public-builds"
   
   switcher = {
-    'release':'release',
+    'release':'released',
     'pr':'it-passed-pr',
     'branch':'it-passed'
   }
