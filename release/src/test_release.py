@@ -68,8 +68,8 @@ def test_get_version():
   version = get_version(repox_get_build_info(ReleaseRequest('SonarSource', 'sonar-java', '20657')))
   print(version)
 
-def test_upload_to_binaries():
-  upload_to_binaries(sonar_dummy_request,'sonarsource-private-releases','com.sonarsource.dummy','sonar-dummy-plugin','','jar','10.0.0.422')
+def test_upload():
+  upload(sonar_dummy_request,'sonarsource-private-releases','com.sonarsource.dummy','sonar-dummy-plugin','','jar','10.0.0.422')
 
 
 def test_github_auth():

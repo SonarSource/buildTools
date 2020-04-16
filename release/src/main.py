@@ -38,6 +38,7 @@ bintray_target_repo="SonarQube-bintray"
 #github
 githup_api_url="https://api.github.com"
 github_token=os.environ.get('GITHUB_TOKEN','no github token in env')
+attach_to_github_release=None
 
 content_type_json='application/json'
 content_type_zip='application/zip'
@@ -66,6 +67,7 @@ def release(request):
   """
   print("PATH:"+request.path)
   _, org, project, buildnumber = request.path.split("/")
+  attach_to_github_release = request.args.get('attach') == "true":
   release_request = ReleaseRequest(org, project, buildnumber)
   buildinfo=repox_get_build_info(release_request)
   authorization_result = validate_authorization_header(request, project)
@@ -171,7 +173,7 @@ def publish_artifact(release_request,artifact_to_publish,version,repo):
   qual = ''
   artifactory_repo = repo.replace('builds', 'releases')
   print(f"{gid} {aid} {ext}")
-  return upload_to_binaries(release_request,artifactory_repo,gid,aid,qual,ext,version)
+  return upload(release_request,artifactory_repo,gid,aid,qual,ext,version)
 
 def is_multi(buildinfo):
   allartifacts=get_artifacts_to_publish(buildinfo)
@@ -216,7 +218,7 @@ def promote(release_request,buildinfo):
     return f"status:{status} code:{r.status_code}"
 
 
-def upload_to_binaries(release_request,artifactory_repo,gid,aid,qual,ext,version):
+def upload(release_request,artifactory_repo,gid,aid,qual,ext,version):
   binaries_repo=OSS_REPO
   #download artifact
   gid_path=gid.replace(".", "/")
@@ -255,8 +257,10 @@ def upload_to_binaries(release_request,artifactory_repo,gid,aid,qual,ext,version
   print(f'uploaded {tempfile} to {directory}')
   scp.close()
   #upload file to github
-  release_info=get_release_info(release_request,version)
-  attach_asset_to_github_release(release_info,tempfile,filename)
+  if attach_to_github_release:
+    print(f"attaching {filename} to github release {version}")
+    release_info=get_release_info(release_request,version)
+    attach_asset_to_github_release(release_info,tempfile,filename)
   #sign file
   stdin,stdout,stderr=ssh_client.exec_command(f"gpg --batch --passphrase {passphrase} --armor --detach-sig --default-key infra@sonarsource.com {directory}/{filename}")
   print(f'signed {directory}/{filename}')
