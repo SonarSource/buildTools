@@ -67,7 +67,12 @@ def release(request):
   """
   print("PATH:"+request.path)
   _, org, project, buildnumber = request.path.split("/")
-  attach_to_github_release = request.args.get('attach') == "true":
+  global attach_to_github_release 
+  attach_to_github_release = request.args.get('attach') == "true"
+  if attach_to_github_release:
+    print("Attaching artifacts to github release")
+  else:
+    print("No attachement to github release")
   release_request = ReleaseRequest(org, project, buildnumber)
   buildinfo=repox_get_build_info(release_request)
   authorization_result = validate_authorization_header(request, project)
@@ -257,10 +262,13 @@ def upload(release_request,artifactory_repo,gid,aid,qual,ext,version):
   print(f'uploaded {tempfile} to {directory}')
   scp.close()
   #upload file to github
+  print(f"attach_to_github_release:{attach_to_github_release}")
   if attach_to_github_release:
     print(f"attaching {filename} to github release {version}")
     release_info=get_release_info(release_request,version)
     attach_asset_to_github_release(release_info,tempfile,filename)
+  else:
+    print("no attachment to github release")
   #sign file
   stdin,stdout,stderr=ssh_client.exec_command(f"gpg --batch --passphrase {passphrase} --armor --detach-sig --default-key infra@sonarsource.com {directory}/{filename}")
   print(f'signed {directory}/{filename}')
