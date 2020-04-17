@@ -122,8 +122,3 @@ def test_rules_cov():
 def test_get_release_id():
   release_info = get_release_info(sonar_dummy_request, "10.0.0.387")
   assert "24468455" == str(release_info.get('id'))
-
-def test_attach_asset_to_github_release():
-  release_info = get_release_info(sonar_dummy_request, "10.0.0.387")
-  r=attach_asset_to_github_release(release_info,"./test.zip","test.zip")
-  print(r.text)
