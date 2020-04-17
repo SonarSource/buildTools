@@ -103,6 +103,7 @@ def github_auth(token,project):
 
 def validate_authorization_header(request, project):
   if request.headers['Authorization'] and request.headers['Authorization'].split()[0] == 'token':
+    global github_token
     github_token=request.headers['Authorization'].split()[1]
     if github_auth(github_token,project):
       
