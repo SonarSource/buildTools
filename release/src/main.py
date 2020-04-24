@@ -67,7 +67,7 @@ def release(request):
   """
   print("PATH:"+request.path)
   _, org, project, buildnumber = request.path.split("/")
-  global attach_to_github_release 
+  global attach_to_github_release
   attach_to_github_release = request.args.get('attach') == "true"
   if attach_to_github_release:
     print("Attaching artifacts to github release")
@@ -106,7 +106,7 @@ def validate_authorization_header(request, project):
     global github_token
     github_token=request.headers['Authorization'].split()[1]
     if github_auth(github_token,project):
-      
+
       print("Authenticated with github token")
       return AUTHENTICATED
     else:
@@ -122,7 +122,7 @@ def repox_get_property_from_buildinfo(buildinfo, property, default=""):
 
 def repox_get_module_property_from_buildinfo(buildinfo, property):
   return buildinfo['buildInfo']['modules'][0]['properties'][property]
-  
+
 def get_version(buildinfo):
   return buildinfo['buildInfo']['modules'][0]['id'].split(":")[-1]
 
@@ -141,20 +141,20 @@ def repox_get_build_info(release_request):
 def get_artifacts_to_publish(buildinfo):
   artifacts = None
   try:
-    artifacts = repox_get_module_property_from_buildinfo(buildinfo,'artifactsToPublish')    
+    artifacts = repox_get_module_property_from_buildinfo(buildinfo,'artifactsToPublish')
   except:
     try:
-      artifacts = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTS_TO_PUBLISH')      
+      artifacts = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTS_TO_PUBLISH')
     except:
       print("no artifacts to publish")
   return artifacts
 
 def publish_all_artifacts(release_request,buildinfo):
   print(f"publishing artifacts for {release_request.project}#{release_request.buildnumber}")
-  release_url = ""    
+  release_url = ""
   repo = repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.ARTIFACTORY_DEPLOY_REPO').replace('qa', 'builds')
   version=get_version(buildinfo)
-  allartifacts=get_artifacts_to_publish(buildinfo)  
+  allartifacts=get_artifacts_to_publish(buildinfo)
   if allartifacts:
     print(f"publishing: {allartifacts}")
     artifacts = allartifacts.split(",")
@@ -165,9 +165,9 @@ def publish_all_artifacts(release_request,buildinfo):
     print(f"{artifacts_count} artifacts")
     for i in range(0, artifacts_count):
       print(f"artifact {i}")
-      release_url = publish_artifact(artifacts[i - 1],version,repo)    
+      release_url = publish_artifact(artifacts[i - 1],version,repo)
   return release_url
-  
+
 
 
 def publish_artifact(release_request,artifact_to_publish,version,repo):
@@ -247,13 +247,19 @@ def upload(release_request,artifactory_repo,gid,aid,qual,ext,version):
     aid="sonarqube"
   tempfile=f"/tmp/{filename}"
   urllib.request.urlretrieve(url, tempfile)
-  print(f'donwloaded {tempfile}')
+  print(f'downloaded {tempfile}')
   #upload artifact
   ssh_client=paramiko.SSHClient()
   ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
   ssh_client.connect(hostname=binaries_host, username=ssh_user, key_filename=ssh_key)
+  #SonarLint Eclipse is uploaded to a special directory
+  if aid == "org.sonarlint.eclipse.site":
+    directory=f"{binaries_path_prefix}/SonarLint-for-Eclipse/releases/"
+    release_url = f"{binaries_url}/SonarLint-for-Eclipse/releases/{filename}"
+  else:
+    directory=f"{binaries_path_prefix}/{binaries_repo}/{aid}/"
+    release_url = f"{binaries_url}/{binaries_repo}/{aid}/{filename}"
   #create directory
-  directory=f"{binaries_path_prefix}/{binaries_repo}/{aid}/"
   stdin,stdout,stderr=ssh_client.exec_command(f"mkdir -p {directory}")
   print(f'created {directory}')
   scp = SCPClient(ssh_client.get_transport())
@@ -262,6 +268,11 @@ def upload(release_request,artifactory_repo,gid,aid,qual,ext,version):
   scp.put(tempfile, remote_path=directory)
   print(f'uploaded {tempfile} to {directory}')
   scp.close()
+  # SonarLint Eclipse is also unzipped on binaries for compatibility with P2 client
+  if aid == "org.sonarlint.eclipse.site":
+    sle_unzip_dir = f"{directory}/{version}"
+    stdin,stdout,stderr=ssh_client.exec_command(f"mkdir -p {sle_unzip_dir}")
+    stdin,stdout,stderr=ssh_client.exec_command(f"cd {sle_unzip_dir} && unzip ../org.sonarlint.eclipse.site-${version}.zip")
   #upload file to github
   print(f"attach_to_github_release:{attach_to_github_release}")
   if attach_to_github_release:
@@ -276,14 +287,13 @@ def upload(release_request,artifactory_repo,gid,aid,qual,ext,version):
   stdin,stdout,stderr=ssh_client.exec_command(f"ls -al {directory}")
   print(stdout.readlines())
   ssh_client.close()
-  release_url = f"{binaries_url}/{binaries_repo}/{aid}/{aid}-{version}.{ext}"
   return release_url
 
 # This will only work for a branch build, not a PR build
 # because a PR build notification needs `"pr_number": NUMBER` instead of `'branch': NAME`
 def notify_burgr(release_request,buildinfo,status):
   branch=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GITHUB_BRANCH',"master")
-  sha1=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GIT_SHA1')    
+  sha1=repox_get_property_from_buildinfo(buildinfo, 'buildInfo.env.GIT_SHA1')
   payload={
     'repository': f"{release_request.org}/{release_request.project}",
     'pipeline': release_request.buildnumber,
