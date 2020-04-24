@@ -254,13 +254,13 @@ def upload(release_request,artifactory_repo,gid,aid,qual,ext,version):
   ssh_client.connect(hostname=binaries_host, username=ssh_user, key_filename=ssh_key)
   #SonarLint Eclipse is uploaded to a special directory
   if aid == "org.sonarlint.eclipse.site":
-    directory=f"{binaries_path_prefix}/SonarLint-for-Eclipse/releases/"
+    directory=f"{binaries_path_prefix}/SonarLint-for-Eclipse/releases"
     release_url = f"{binaries_url}/SonarLint-for-Eclipse/releases/{filename}"
   else:
-    directory=f"{binaries_path_prefix}/{binaries_repo}/{aid}/"
+    directory=f"{binaries_path_prefix}/{binaries_repo}/{aid}"
     release_url = f"{binaries_url}/{binaries_repo}/{aid}/{filename}"
   #create directory
-  stdin,stdout,stderr=ssh_client.exec_command(f"mkdir -p {directory}")
+  exec_ssh_command(ssh_client, f"mkdir -p {directory}")
   print(f'created {directory}')
   scp = SCPClient(ssh_client.get_transport())
   print('scp connexion created')
@@ -271,8 +271,8 @@ def upload(release_request,artifactory_repo,gid,aid,qual,ext,version):
   # SonarLint Eclipse is also unzipped on binaries for compatibility with P2 client
   if aid == "org.sonarlint.eclipse.site":
     sle_unzip_dir = f"{directory}/{version}"
-    stdin,stdout,stderr=ssh_client.exec_command(f"mkdir -p {sle_unzip_dir}")
-    stdin,stdout,stderr=ssh_client.exec_command(f"cd {sle_unzip_dir} && unzip ../org.sonarlint.eclipse.site-${version}.zip")
+    exec_ssh_command(ssh_client, f"mkdir -p {sle_unzip_dir}")
+    exec_ssh_command(ssh_client, f"cd {sle_unzip_dir} && unzip ../org.sonarlint.eclipse.site-{version}.zip")
   #upload file to github
   print(f"attach_to_github_release:{attach_to_github_release}")
   if attach_to_github_release:
@@ -282,12 +282,20 @@ def upload(release_request,artifactory_repo,gid,aid,qual,ext,version):
   else:
     print("no attachment to github release")
   #sign file
-  stdin,stdout,stderr=ssh_client.exec_command(f"gpg --batch --passphrase {passphrase} --armor --detach-sig --default-key infra@sonarsource.com {directory}/{filename}")
+  exec_ssh_command(ssh_client, f"gpg --batch --passphrase {passphrase} --armor --detach-sig --default-key infra@sonarsource.com {directory}/{filename}")
   print(f'signed {directory}/{filename}')
-  stdin,stdout,stderr=ssh_client.exec_command(f"ls -al {directory}")
-  print(stdout.readlines())
+  exec_ssh_command(ssh_client, f"ls -al {directory}")
   ssh_client.close()
   return release_url
+
+def exec_ssh_command(ssh_client, command):
+  stdin,stdout,stderr=ssh_client.exec_command(command)
+  stdout_contents = '\n'.join(stdout.readlines())
+  print(f"stdout: {stdout_contents}")
+  stderr_contents = '\n'.join(stderr.readlines())
+  print(f"stderr: {stderr_contents}")
+  if stderr_contents:
+    raise Exception(f"Error during the SSH command '{command}': {stderr_contents}")
 
 # This will only work for a branch build, not a PR build
 # because a PR build notification needs `"pr_number": NUMBER` instead of `'branch': NAME`
