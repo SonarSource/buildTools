@@ -164,8 +164,8 @@ def publish_all_artifacts(release_request,buildinfo):
       return publish_artifact(release_request,artifacts[0],version,repo)
     print(f"{artifacts_count} artifacts")
     for i in range(0, artifacts_count):
-      print(f"artifact {i}")
-      release_url = publish_artifact(artifacts[i - 1],version,repo)
+      print(f"artifact {artifacts[i]}")
+      release_url = publish_artifact(release_request,artifacts[i],version,repo)
   return release_url
 
 
