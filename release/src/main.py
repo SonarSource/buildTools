@@ -284,7 +284,6 @@ def upload(release_request,artifactory_repo,gid,aid,qual,ext,version):
   #sign file
   exec_ssh_command(ssh_client, f"gpg --batch --passphrase {passphrase} --armor --detach-sig --default-key infra@sonarsource.com {directory}/{filename}")
   print(f'signed {directory}/{filename}')
-  exec_ssh_command(ssh_client, f"ls -al {directory}")
   ssh_client.close()
   return release_url
 
