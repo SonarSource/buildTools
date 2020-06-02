@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-TAG=v4
+TAG=v5
 
 if [ "${CIRRUS_PR:-}" != "" ]; then
   ./build.sh -t "PR_$CIRRUS_PR"
