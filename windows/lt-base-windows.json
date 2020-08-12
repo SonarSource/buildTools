@@ -37,12 +37,12 @@
       "type": "powershell",
       "inline": [        
         "choco install 7zip --version 19.0",
-        "choco install nodejs --version 10.16.3",
-        "choco install yarn --version 1.19.1",
-        "choco install openjdk11 --version 11.0.4.11",
+        "choco install nodejs-lts --version 12.18.3",
+        "choco install yarn --version 1.22.4",
+        "choco install openjdk11 --version 11.0.8.10",
         "choco install python --version 3.7.2",
         "choco install maven --version 3.6.2",
-        "choco install git --version 2.23.0 --package-parameters \"/GitAndUnixToolsOnPath /NoShellIntegration\""
+        "choco install git --version 2.28.0 --package-parameters \"/GitAndUnixToolsOnPath /NoShellIntegration\""
       ]
     },
     {
