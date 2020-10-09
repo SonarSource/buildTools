@@ -7,9 +7,14 @@ set -euo pipefail
 source cirrus-env PROMOTE
 source set_maven_build_version $BUILD_NUMBER
 curl -sfSL -H "Authorization: Bearer $GCF_ACCESS_TOKEN" "$PROMOTE_URL/$GITHUB_REPO/$GITHUB_BRANCH/$BUILD_NUMBER/$PULL_REQUEST"
+
+#Add github commit status with build number
+BUILD_URL="${ARTIFACTORY_URL}/webapp/#/builds/${PROJECT}/${BUILD_NUMBER}/"
+curl -X POST -H "Authorization: token $GITHUB_TOKEN" -H 'Content-Type: application/json' --data '{"state": "success", "target_url": "'${BUILD_URL}'", "description": "Latest promoted build: '${PROJECT_VERSION}'", "context": "repox"}' https://api.github.com/repos/${GITHUB_REPO}/statuses/${GIT_SHA1}
+
+#burgr notification
 { 
     burgr-notify-promotion  
 } || { 
     echo "burgr promotion notification failed"
 }
-
