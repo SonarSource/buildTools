@@ -10,7 +10,7 @@ curl -sfSL -H "Authorization: Bearer $GCF_ACCESS_TOKEN" "$PROMOTE_URL/$GITHUB_RE
 
 #Add github commit status with build number
 BUILD_URL="${REPOX_URL}/webapp/#/builds/sonar-dummy/${BUILD_NUMBER}/"
-curl -X POST -H "Authorization: token $GITHUB_TOKEN" -H 'Content-Type: application/json' --data '{"state": "success", "target_url": "'${BUILD_URL}'", "description": "'Latest promoted build: ${PROJECT_VERSION}'", "context": "repox"}' https://api.github.com/repos/${GITHUB_REPO}/statuses/${GIT_SHA1}
+curl -X POST -H "Authorization: token $GITHUB_TOKEN" -H 'Content-Type: application/json' --data '{"state": "success", "target_url": "'${BUILD_URL}'", "description": "Latest promoted build: '${PROJECT_VERSION}'", "context": "repox"}' https://api.github.com/repos/${GITHUB_REPO}/statuses/${GIT_SHA1}
 
 #burgr notification
 { 
