@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+#repox url
+export REPOX_URL=https://repox.jfrog.io/repox
 # generic environment variables used by Gradle build
 export GIT_SHA1=$CIRRUS_CHANGE_IN_REPO
 export GITHUB_BASE_BRANCH=${CIRRUS_BASE_BRANCH:-}
