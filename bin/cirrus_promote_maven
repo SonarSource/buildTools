@@ -17,8 +17,4 @@ else
 fi
 
 #burgr notification
-{ 
-    burgr-notify-promotion  
-} || { 
-    echo "burgr promotion notification failed"
-}
+burgr-notify-promotion  
