@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-TAG=v6
+TAG=v7
 
 if [ "${CIRRUS_PR:-}" != "" ]; then
   TAG=$CIRRUS_PR
