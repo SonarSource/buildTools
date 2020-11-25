@@ -51,17 +51,17 @@
       "type": "powershell",
       "inline": [
         "choco install 7zip --version 19.0",
-        "choco install nuget.commandline --version 5.3.0",
+        "choco install nuget.commandline --version 5.8.0",
         "choco install sonarscanner-msbuild-net46 --version=4.10.0.19059",
         "choco install sonarscanner-msbuild-netcoreapp2.0 --version=4.10.0.19059",
-        "choco install visualstudio2019buildtools --version=16.3.6.0",
+        "choco install visualstudio2019buildtools --version 16.8.2.0 --package-parameters \"--allWorkloads --includeRecommended --includeOptional\"",
         "choco install visualstudio2019-workload-webbuildtools",
         "choco install visualstudio2019-workload-manageddesktopbuildtools",
         "choco install dotnetfx --version=4.8.0.20190930",
         "choco install netfx-4.8-devpack --version 4.8.0.20190930",
         "choco install openjdk11 --version 11.0.8.10",
         "choco install maven --version 3.6.2",
-        "choco install git --version 2.28.0 --package-parameters \"/GitAndUnixToolsOnPath /NoShellIntegration\"",
+        "choco install git --version 2.29.2.2 --package-parameters \"/GitAndUnixToolsOnPath /NoShellIntegration\"",
         "choco install nodejs-lts --version 12.18.3"
       ]
     },
