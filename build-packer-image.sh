@@ -2,10 +2,12 @@
 
 set -euo pipefail
 
+#See README.md to understand branches, naming and versioning.
+
 TAG=v8
 
 if [ "${CIRRUS_PR:-}" != "" ]; then
-  TAG=$CIRRUS_PR
+  TAG=pull-request-$CIRRUS_PR
   export IMAGE_FAMILY=
 elif [ $CIRRUS_BRANCH == "lt-base-windows-dotnet" ]; then
   export IMAGE_FAMILY=lt-base-windows-dotnet
