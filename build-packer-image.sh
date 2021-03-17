@@ -13,6 +13,7 @@ elif [ $CIRRUS_BRANCH == "lt-base-windows-dotnet" ]; then
   export IMAGE_FAMILY=lt-base-windows-dotnet
 else
   echo "Not building image for feature branch"
+  exit
 fi
 
 export IMAGE_NAME=lt-base-windows-dotnet-${TAG}
