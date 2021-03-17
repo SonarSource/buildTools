@@ -4,7 +4,7 @@
 
 Increment `TAG` in `./build-packer-image.sh`.
 
-Merge/Commit to the master will create `lt-base-windows-dotnet-vXX` image **with** the image family where `vXX` is the TAG.
+Merge/Commit to the `master` branch will create `lt-base-windows-dotnet-vXX` image **with** the image family where `vXX` is the TAG.
 
 PR commits will create `lt-base-windows-dotnet-pull-request-XX` image **without** the image family where `XX` is a PR number.
 
