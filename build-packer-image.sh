@@ -13,7 +13,7 @@ else
   echo "Not building image for feature branch"
 fi
 
-export IMAGE_NAME=lt-base-windows-${TAG}
+export IMAGE_NAME=lt-base-windows-jdk15-${TAG}
 
 apt-get update && apt-get -y install curl unzip
 curl -LsS https://releases.hashicorp.com/packer/1.3.5/packer_1.3.5_linux_amd64.zip > packer.zip
