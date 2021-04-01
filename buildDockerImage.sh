@@ -6,8 +6,8 @@ TAG=v5
 
 if [ "${CIRRUS_PR:-}" != "" ]; then
   ./build.sh -t "PR_$CIRRUS_PR"
-  ./build.sh -t "PR_$CIRRUS_PR" -f Dockerfile-jdk15 -n base-jdk16
-  ./build.sh -t "PR_$CIRRUS_PR" -f Dockerfile-jdk16 -n base-jdk15
+  ./build.sh -t "PR_$CIRRUS_PR" -f Dockerfile-jdk15 -n base-jdk15
+  ./build.sh -t "PR_$CIRRUS_PR" -f Dockerfile-jdk16 -n base-jdk16
   
 elif [ $CIRRUS_BRANCH == "docker" ]; then
   ./build.sh -t $TAG
