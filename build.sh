@@ -26,7 +26,7 @@ function _print_help {
 }
 
 # Parse arguments.
-while getopts "ht:c:" OPTION; do
+while getopts "hf:n:t:c:" OPTION; do
   case "$OPTION" in
   h)
     _print_help
