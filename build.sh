@@ -49,6 +49,6 @@ done
 shift $(expr $OPTIND - 1 )
 
 docker pull "gcr.io/$CLUSTER/$NAME:$TAG" || true
-docker build -f Dockerfile-base -t $NAME .
+docker build -f $DOCKERFILE -t $NAME .
 docker tag $NAME "gcr.io/$CLUSTER/$NAME:$TAG"
 docker push "gcr.io/$CLUSTER/$NAME:$TAG"
