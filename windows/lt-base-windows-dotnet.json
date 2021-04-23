@@ -54,7 +54,7 @@
         "choco install nuget.commandline --version 5.9.1",
         "choco install sonarscanner-msbuild-net46 --version=5.2.0.29862",
         "choco install sonarscanner-msbuild-netcoreapp2.0 --version=5.2.0.29862",
-        "choco install visualstudio2019buildtools --version 16.8.2.0 --package-parameters \"--allWorkloads --includeRecommended --includeOptional\"",
+        "choco install visualstudio2019buildtools --version 16.9.4.0 --package-parameters \"--allWorkloads --includeRecommended --includeOptional\"",
         "choco install visualstudio2019-workload-webbuildtools",
         "choco install visualstudio2019-workload-manageddesktopbuildtools",
         "choco install dotnetfx --version=4.8.0.20190930",
