@@ -4,7 +4,7 @@ set -euo pipefail
 
 #See README.md to understand branches, naming and versioning.
 
-TAG=v8
+TAG=v9
 
 if [ "${CIRRUS_PR:-}" != "" ]; then
   TAG=pull-request-$CIRRUS_PR
