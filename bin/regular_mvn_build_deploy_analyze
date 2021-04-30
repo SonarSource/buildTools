@@ -74,7 +74,7 @@ elif [[ "${GITHUB_BRANCH}" == "branch-"* ]] && [ "$PULL_REQUEST" == "false" ]; t
     # Do not deploy a SNAPSHOT version but the release version related to this build
     . set_maven_build_version $BUILD_NUMBER
     mvn deploy \
-      -Pcoverage,deploy-sonarsource,release \
+      -Pcoverage,deploy-sonarsource,release,sign \
       -B -e -V $*
   else
     echo "======= Found RELEASE version ======="
