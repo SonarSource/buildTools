@@ -24,7 +24,7 @@ test_windows_task:
   gce_instance:
     image_project: language-team
     # TODO test correct image
-    image_family: lt-base-windows-jdk15
+    image_family: lt-base-windows-jdk16
     platform: windows
     zone: europe-west3-a
     preemptible: true
