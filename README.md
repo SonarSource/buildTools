@@ -33,3 +33,5 @@ gcloud compute firewall-rules create default-allow-winrm \
     --priority 65534 \
     --target-tags packer
 ```
+
+
