@@ -1,5 +1,7 @@
 # buildTools
 
+This branch contains the .NET Windows machines used in the CI for https://github.com/SonarSource/sonar-security/
+
 ## Create new image version
 
 Increment `TAG` in `./build-packer-image.sh`.
