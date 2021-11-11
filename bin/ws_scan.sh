@@ -38,8 +38,12 @@ local_maven_expression() {
 
 
 scan() {
-  export WS_PRODUCTNAME=$(local_maven_expression "\${pom.groupId}:\${pom.artifactId}")
-  export WS_PROJECTNAME="${WS_PRODUCTNAME} ${PROJECT_VERSION%.*}"
+  if [ "${WS_PRODUCTNAME:-UNDEFINED}" == "UNDEFINED" ]; then
+    export WS_PRODUCTNAME=$(local_maven_expression "\${pom.groupId}:\${pom.artifactId}")
+  fi
+  if [ "${WS_PROJECTNAME:-UNDEFINED}" == "UNDEFINED" ]; then
+    export WS_PROJECTNAME="${WS_PRODUCTNAME} ${PROJECT_VERSION%.*}"
+  fi
   echo "${WS_PRODUCTNAME} - ${WS_PROJECTNAME}"
   java -jar ${UNIFIED_AGENT_JAR} -scanComment "buildNumber:${BUILD_NUMBER};gitSha:${CIRRUS_CHANGE_IN_REPO}"
 }
