@@ -21,6 +21,9 @@ COPY settings-public.xml ${MAVEN_CONFIG}/settings-public.xml
 COPY settings-private.xml ${MAVEN_CONFIG}/settings-private.xml
 RUN chown -R sonarsource:sonarsource ${MAVEN_CONFIG}
 
+RUN curl -Lo /usr/bin/jfrog https://releases-docker.jfrog.io/artifactory/jfrog-cli/v2/2.5.1/jfrog-cli-linux-amd64/jfrog
+RUN chmod +x /usr/bin/jfrog
+
 USER sonarsource
 
 COPY bin/burgr-notify-promotion bin/cirrus-env bin/regular_gradle_build_deploy_analyze \
