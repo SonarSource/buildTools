@@ -32,14 +32,10 @@ get_unified_agent() {
   fi
 }
 
-local_maven_expression() {
-  mvn -q -Dexec.executable="echo" -Dexec.args="${1}" --non-recursive org.codehaus.mojo:exec-maven-plugin:1.3.1:exec
-}
-
 
 scan() {
   if [ "${WS_PRODUCTNAME:-UNDEFINED}" == "UNDEFINED" ]; then
-    export WS_PRODUCTNAME=$(local_maven_expression "\${pom.groupId}:\${pom.artifactId}")
+    export WS_PRODUCTNAME=${CIRRUS_REPO_FULL_NAME}
   fi
   if [ "${WS_PROJECTNAME:-UNDEFINED}" == "UNDEFINED" ]; then
     export WS_PROJECTNAME="${WS_PRODUCTNAME} ${PROJECT_VERSION%.*}"
