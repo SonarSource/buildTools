@@ -17,6 +17,8 @@ elif [ $CIRRUS_BRANCH == "docker" ]; then
   ./build.sh -t latest -f Dockerfile-jdk16 -n base-jdk16
   ./build.sh -t $TAG -f Dockerfile-jdk17 -n base-jdk17
   ./build.sh -t latest -f Dockerfile-jdk17 -n base-jdk17
+  ./build.sh -t $TAG -f Dockerfile-jdk17-slim -n base-jdk17-slim
+  ./build.sh -t latest -f Dockerfile-jdk17-slim -n base-jdk17-slim
 else
   echo "Not building image for feature branch"
 fi
