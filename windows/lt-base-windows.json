@@ -37,7 +37,7 @@
       "type": "powershell",
       "inline": [        
         "choco install 7zip --version 19.0",
-        "choco install nodejs-lts --version 12.18.3",
+        "choco install nodejs-lts --version 16.14.0",
         "choco install yarn --version 1.22.4",
         "choco install openjdk11 --version 11.0.8.10",
         "choco install python --version 3.7.2",
